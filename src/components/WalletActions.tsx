@@ -33,6 +33,11 @@ export default function WalletActions() {
   const [pixPayloadString, setPixPayloadString] = useState<string>('');
   const [activeTxId, setActiveTxId] = useState<string>('');
 
+  // Customer details for real deposit validation
+  const [customerName, setCustomerName] = useState<string>('');
+  const [customerEmail, setCustomerEmail] = useState<string>('');
+  const [customerCpf, setCustomerCpf] = useState<string>('');
+
   // Withdraw fields
   const [withdrawAmount, setWithdrawAmount] = useState<number>(50);
   const [pixKeyType, setPixKeyType] = useState<string>('cpf');
@@ -74,6 +79,11 @@ export default function WalletActions() {
   };
 
   const handleGeneratePix = async () => {
+    if (!customerName.trim() || !customerEmail.trim()) {
+      alert('Por favor, preencha seu Nome e E-mail para gerar a cobrança PIX.');
+      return;
+    }
+
     setIsGeneratingPix(true);
     try {
       const response = await fetch('/api/deposit', {
@@ -81,12 +91,23 @@ export default function WalletActions() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ amount: depositAmount })
+        body: JSON.stringify({ 
+          amount: depositAmount,
+          name: customerName,
+          email: customerEmail,
+          cpf: customerCpf
+        })
       });
       const data = await response.json();
       if (data.success) {
-        setPixPayloadString(data.transaction.pix_code);
-        setActiveTxId(data.transaction.id);
+        // Real checkout transaction returned by IronPay has transaction details inside transaction.data or transaction
+        // Let's fallback safely depending on payload mapping
+        const tx = data.transaction;
+        const code = tx.pix_code || (tx.data ? tx.data.pix_code : '') || '';
+        const id = tx.id || (tx.data ? tx.data.id : '') || '';
+
+        setPixPayloadString(code);
+        setActiveTxId(id);
         setDepositStage('qr_code');
       } else {
         const detail = data.error ? JSON.stringify(data.error) : (data.message || 'Erro no servidor');
@@ -223,6 +244,40 @@ export default function WalletActions() {
                         value={depositAmount}
                         onChange={(e) => setDepositAmount(Math.max(10, Math.min(100000, Number(e.target.value))))}
                         className="bg-transparent text-sm text-slate-200 font-mono focus:outline-none w-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Customer Information inputs */}
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest block">Nome Completo</span>
+                      <input
+                        type="text"
+                        placeholder="Nome do titular da conta"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        className="w-full bg-slate-955/80 border border-slate-800 rounded-xl p-3 text-slate-200 font-mono text-xs focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest block">E-mail</span>
+                      <input
+                        type="email"
+                        placeholder="seuemail@exemplo.com"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        className="w-full bg-slate-955/80 border border-slate-800 rounded-xl p-3 text-slate-200 font-mono text-xs focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest block">CPF (Opcional)</span>
+                      <input
+                        type="text"
+                        placeholder="000.000.000-00"
+                        value={customerCpf}
+                        onChange={(e) => setCustomerCpf(e.target.value)}
+                        className="w-full bg-slate-955/80 border border-slate-800 rounded-xl p-3 text-slate-200 font-mono text-xs focus:outline-none focus:border-cyan-500"
                       />
                     </div>
                   </div>

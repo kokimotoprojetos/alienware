@@ -4,13 +4,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount } = req.body;
+    const { amount, name, email, cpf } = req.body;
     if (!amount || isNaN(amount) || amount <= 0) {
-      return res.status(400).json({ success: false, message: 'Valor inválido.' });
+      return res.status(400).json({ success: false, message: 'Valor de recarga inválido.' });
+    }
+    if (!name || !email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Nome e E-mail são obrigatórios para emissão do PIX junto ao gateway.' 
+      });
     }
 
     const IRONPAY_API_TOKEN = process.env.IRONPAY_API_TOKEN || '';
+    const IRONPAY_OFFER_HASH = process.env.IRONPAY_OFFER_HASH || '';
     const isMockMode = !IRONPAY_API_TOKEN || IRONPAY_API_TOKEN.includes('YOUR_IRONPAY_API_TOKEN');
+    
     const amountInCentavos = Math.round(amount * 100);
 
     if (isMockMode) {
@@ -33,23 +41,54 @@ export default async function handler(req, res) {
       });
     }
 
+    // Verify if offer hash is configured in production
+    if (!IRONPAY_OFFER_HASH) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Configuração ausente: A variável de ambiente IRONPAY_OFFER_HASH não foi configurada no servidor Vercel. Crie uma oferta no painel da IronPay e insira seu hash.'
+      });
+    }
+
+    // Construct checkout body following IronPay requirement
+    const requestBody = {
+      api_token: IRONPAY_API_TOKEN,
+      offer_hash: IRONPAY_OFFER_HASH,
+      payment_method: 'pix',
+      customer: {
+        name: name,
+        email: email,
+        document: cpf ? cpf.replace(/\D/g, '') : '12345678909' // Fallback document if empty
+      },
+      cart: {
+        items: [
+          {
+            id: "1",
+            name: "Adicionar Saldo Alienware Capital",
+            price: amountInCentavos,
+            quantity: 1
+          }
+        ],
+        total: amountInCentavos
+      }
+    };
+
+    console.log('[IronPay Backend] Enviando cobrança para a IronPay...', requestBody);
+
     const response = await fetch('https://api.ironpayapp.com.br/api/public/v1/transactions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        api_token: IRONPAY_API_TOKEN,
-        amount: amountInCentavos,
-        payment_method: 'pix'
-      })
+      body: JSON.stringify(requestBody)
     });
 
     const data = await response.json();
     if (!response.ok) {
+      console.error('[IronPay Backend] Resposta de erro do gateway:', data);
       return res.status(response.status).json({ success: false, error: data });
     }
 
+    // Return the response containing the pix_code
     return res.status(200).json({
       success: true,
       transaction: data
@@ -57,6 +96,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('[Vercel Serverless] Deposit Error:', error);
-    return res.status(500).json({ success: false, message: 'Erro interno ao gerar o PIX.' });
+    return res.status(500).json({ success: false, message: 'Erro interno no servidor ao gerar o PIX.' });
   }
 }

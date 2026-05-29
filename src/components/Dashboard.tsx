@@ -96,7 +96,7 @@ export default function Dashboard() {
               Matriz Ativa: Rede de Geração Alienware Operacional
             </h4>
             <p className="text-xs text-slate-400">
-              Sua frota computacional está integrada. Acelere a simulação para simular rendimentos em tempo recorde!
+              Sua frota computacional está integrada e gerando rendimentos de hashrate em tempo real.
             </p>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between text-2xs border-t border-slate-800/60 pt-3">
-            <span className="text-slate-500 font-mono">Simulador Ativo</span>
+            <span className="text-slate-500 font-mono">Carteira Ativa</span>
             <span className="text-emerald-400 font-medium flex items-center gap-0.5">
               <TrendingUp className="w-3 h-3" /> Auto-líquido
             </span>
@@ -148,7 +148,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between text-2xs border-t border-slate-800/60 pt-3">
-            <span className="text-slate-500 font-mono">Instâncias Virtuais</span>
+            <span className="text-slate-500 font-mono">Instâncias Ativas</span>
             <span className="text-indigo-400 font-medium font-sans">
               {userRigs.length} {userRigs.length === 1 ? 'Nó Ativo' : 'Nós Ativos'}
             </span>
@@ -253,7 +253,7 @@ export default function Dashboard() {
               R$ {unclaimedYield.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
             </h2>
             <p className="text-2xs text-slate-500 font-mono mt-1">
-              Velocidade líquida atual da rede: {((userRigs.reduce((acc, curr) => acc + curr.dailyYieldAmount, 0)) / 86400 * simulationSpeed).toFixed(5)} R$/segundo
+              Velocidade líquida atual da rede: {((userRigs.reduce((acc, curr) => acc + curr.dailyYieldAmount, 0)) / 86400).toFixed(5)} R$/segundo
             </p>
 
             <div className="w-full max-w-sm mt-5 bg-slate-900 rounded-lg p-2.5 border border-slate-800 text-3xs text-slate-400 font-mono text-left space-y-1">
@@ -271,61 +271,48 @@ export default function Dashboard() {
           {/* Quick instructions */}
           <div className="mt-4 text-2xs text-slate-400 space-y-1 bg-slate-950/30 p-3 rounded-lg border border-slate-800/40">
             <span className="font-mono text-slate-300 font-medium block mb-0.5">ℹ️ SOBRE O PROCESSO DE RENDIMENTOS:</span>
-            <p>Os hardwares em sua frota geram frações de rendimentos a cada segundo simulado. Ao coletar, os valores são sacados para sua carteira instantaneamente, ficando prontos para reinvestimento ou saque PIX!</p>
+            <p>Os hardwares em sua frota geram frações de rendimentos a cada segundo. Ao coletar, os valores são sacados para sua carteira instantaneamente, ficando prontos para reinvestimento ou saque PIX!</p>
           </div>
-
         </div>
 
-        {/* Warp Drive Speed Modifier Unit */}
+        {/* Security & Network Status Card */}
         <div className="lg:col-span-5 flex flex-col justify-between gap-6">
-          
-          {/* Simulation controller card */}
           <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-cyan-400" />
-                  <h4 className="text-sm font-semibold text-slate-200 font-sans tracking-tight">Painel de Warp Alienware</h4>
+                  <h4 className="text-sm font-semibold text-slate-200 font-sans tracking-tight">Status de Rede Alienware</h4>
                 </div>
-                <Clock className="w-4 h-4 text-slate-500" />
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10B981]"></div>
               </div>
 
               <p className="text-xs text-slate-400 mb-4">
-                Esta plataforma inclui um **Time-Warp Simulator**. Como os hardwares pagam rendimentos por período diário, você pode acelerar ou desacelerar o tempo para simular dias ou meses de lucros em segundos!
+                Sua conexão com o ecossistema de processamento em nuvem Alienware Capital está segura e criptografada de ponta a ponta.
               </p>
 
-              {/* Holographic Speed visualizer */}
-              <div className={`p-4 rounded-xl border mb-5 text-center transition-all ${getSpeedColor()}`}>
-                <span className="text-3xs font-mono uppercase tracking-widest block mb-1 opacity-75">MULTIPLICADOR DE TEMPO ATIVO</span>
-                <span className="text-xl font-black font-mono tracking-wider block">{simulationSpeed}x</span>
-                <span className="text-2xs font-sans mt-1 block">{getSpeedDesc()}</span>
-              </div>
-
-              {/* Selector grid */}
-              <div className="space-y-2.5">
-                <button
-                  onClick={toggleSpeed}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-slate-800 to-slate-900 hover:from-cyan-950 hover:to-indigo-950 hover:border-cyan-500/50 text-slate-200 border border-slate-800 text-xs font-mono flex items-center justify-between transition group cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <RefreshCw className="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-18s transition-transform duration-700" />
-                    ACELERAR LINHA DO TEMPO
-                  </span>
-                  <ChevronsRight className="w-4 h-4 text-cyan-400 animate-pulse" />
-                </button>
+              {/* Holographic specs */}
+              <div className="space-y-2.5 font-mono text-2xs">
+                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
+                  <span className="text-slate-500">GATEWAY DE PAGAMENTO</span>
+                  <span className="text-cyan-400 font-bold">IRONPAY SECURE API</span>
+                </div>
+                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
+                  <span className="text-slate-500">CRIPTOGRAFIA LEDGER</span>
+                  <span className="text-indigo-400 font-bold">SHA-256 PROTOCOL</span>
+                </div>
+                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
+                  <span className="text-slate-500">LATÊNCIA DA MATRIX</span>
+                  <span className="text-emerald-400 font-bold">4ms (ESTÁVEL)</span>
+                </div>
               </div>
             </div>
 
             <div className="mt-5 border-t border-slate-800/60 pt-3">
-              <span className="text-[10px] font-mono text-slate-500 block uppercase mb-1">Estatísticas do Time-Warp</span>
+              <span className="text-[10px] font-mono text-slate-500 block uppercase mb-1">Tecnologia Core</span>
               <div className="flex justify-between text-2xs text-slate-400">
-                <span>Segundo Real :</span>
-                <span className="text-slate-300 font-mono">
-                  {simulationSpeed === 1 ? '1 Segundo' : ''}
-                  {simulationSpeed === 60 ? '1 Minuto' : ''}
-                  {simulationSpeed === 3600 ? '1 Hora' : ''}
-                  {simulationSpeed === 86400 ? '1 Dia Completo' : ''}
-                </span>
+                <span>Certificado SSL :</span>
+                <span className="text-slate-350 font-mono">TLS 1.3 ATIVO</span>
               </div>
             </div>
           </div>
@@ -367,7 +354,7 @@ export default function Dashboard() {
           <Award className="w-5 h-5 text-indigo-400" />
           <div>
             <h4 className="text-sm font-semibold text-slate-200 font-sans tracking-tight">Setores de Missões: Alienware Vanguard</h4>
-            <p className="text-2xs text-slate-400">Complete os testes computacionais simulados do sistema e desative travas de saques ou receba subsídios.</p>
+            <p className="text-2xs text-slate-400">Complete os objetivos de processamento de hardware e receba subsídios adicionais.</p>
           </div>
         </div>
 
@@ -443,43 +430,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Simulated System Reset Utility */}
-      <div className="bg-slate-900/40 p-4 border border-dashed border-red-500/20 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-          <h5 className="text-xs font-semibold text-slate-300">Depuração e Testes Internos</h5>
-          <p className="text-3xs text-slate-500 mt-0.5">
-            Reinicia todos os valores de LocalStorage, saldo inicial fictício da simulação e frota para os padrões de fábrica.
-          </p>
-        </div>
-        <div>
-          {resetConfirm ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  resetAllSimulation();
-                  setResetConfirm(false);
-                }}
-                className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600 border border-red-500 text-red-100 font-mono text-2xs font-bold rounded uppercase transition cursor-pointer"
-              >
-                CONFIRMAR REBOOT
-              </button>
-              <button
-                onClick={() => setResetConfirm(false)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono text-2xs rounded uppercase transition cursor-pointer"
-              >
-                CANCELAR
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setResetConfirm(true)}
-              className="px-4 py-1.5 bg-slate-900 hover:bg-red-950 hover:text-red-400 hover:border-red-500/30 border border-slate-800 rounded text-slate-500 font-mono text-2xs transition uppercase cursor-pointer"
-            >
-              REINICIAR SIMULADOR
-            </button>
-          )}
-        </div>
-      </div>
 
     </div>
   );

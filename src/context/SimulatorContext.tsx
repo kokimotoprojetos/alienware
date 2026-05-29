@@ -45,29 +45,13 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Load initial local states or fallback
   const [balance, setBalance] = useState<number>(() => {
     const stored = localStorage.getItem('aw_balance');
-    return stored ? parseFloat(stored) : 250.00; // Provide starting balance of R$250 untuk testing!
+    return stored ? parseFloat(stored) : 0.00; // Real account starts with 0
   });
 
   const [userRigs, setUserRigs] = useState<UserRig[]>(() => {
     const stored = localStorage.getItem('aw_user_rigs');
     if (stored) return JSON.parse(stored);
-    
-    // Default: give them 1 basic Aurora rig already working to show active graphs and progress right away!
-    const defaultProduct = INITIAL_PRODUCTS[0];
-    return [{
-      id: 'default-active-rig-01',
-      productId: defaultProduct.id,
-      name: defaultProduct.name,
-      codename: defaultProduct.codename,
-      purchaseTimestamp: Date.now() - 3600 * 1000, // 1 hour ago
-      lastClaimedTimestamp: Date.now() - 3600 * 1000,
-      accumulatedMinutes: 60,
-      tier: defaultProduct.tier,
-      cost: defaultProduct.cost,
-      dailyYieldPercent: defaultProduct.dailyYieldPercent,
-      dailyYieldAmount: defaultProduct.dailyYieldAmount,
-      visualColor: defaultProduct.visualColor
-    }];
+    return []; // Real account starts with 0 hardware nodes
   });
 
   const [unclaimedYield, setUnclaimedYield] = useState<number>(() => {
@@ -78,29 +62,12 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const stored = localStorage.getItem('aw_transactions');
     if (stored) return JSON.parse(stored);
-    return [
-      {
-        id: 'tx-init-0',
-        type: 'deposit',
-        amount: 200.00,
-        timestamp: Date.now() - 7200 * 1000,
-        status: 'completed',
-        details: 'Crédito Inicial Alienware Testing Core'
-      },
-      {
-        id: 'tx-init-1',
-        type: 'buy_hardware',
-        amount: 50.00,
-        timestamp: Date.now() - 3600 * 1000,
-        status: 'completed',
-        details: 'Ativação de Nó Aurora R16 (Default)'
-      }
-    ];
+    return []; // Real account starts with no transaction history
   });
 
   const [referrals, setReferrals] = useState<ReferralPilot[]>(() => {
     const stored = localStorage.getItem('aw_referrals');
-    return stored ? JSON.parse(stored) : MOCK_PILOTS;
+    return stored ? JSON.parse(stored) : []; // Real account starts with no referrals
   });
 
   const [completedMissions, setCompletedMissions] = useState<string[]>(() => {
@@ -109,8 +76,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   const [simulationSpeed, setSimulationSpeed] = useState<number>(() => {
-    const stored = localStorage.getItem('aw_sim_speed');
-    return stored ? parseInt(stored, 10) : 3600; // Default: 3600x Warp Speed (1s of real time = 1hr of simulation) so users can see things moving immediately!
+    return 1; // Locked to 1x (real time) for live operations
   });
 
   const [simulationTimeElapsed, setSimulationTimeElapsed] = useState<number>(0);
@@ -494,40 +460,15 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.removeItem('aw_sim_speed');
     localStorage.removeItem('aw_checkin_claimed');
 
-    // Reset local states to default
-    setBalance(250.00);
+    // Reset local states to default (Clean real account values)
+    setBalance(0.00);
     setUnclaimedYield(0);
-    setSimulationSpeed(3600);
+    setSimulationSpeed(1);
     setCheckInClaimedToday(false);
     setCompletedMissions([]);
-    setReferrals(MOCK_PILOTS);
-    
-    const defaultProduct = INITIAL_PRODUCTS[0];
-    setUserRigs([{
-      id: 'default-active-rig-01',
-      productId: defaultProduct.id,
-      name: defaultProduct.name,
-      codename: defaultProduct.codename,
-      purchaseTimestamp: Date.now() - 3600 * 1000,
-      lastClaimedTimestamp: Date.now() - 3600 * 1000,
-      accumulatedMinutes: 60,
-      tier: defaultProduct.tier,
-      cost: defaultProduct.cost,
-      dailyYieldPercent: defaultProduct.dailyYieldPercent,
-      dailyYieldAmount: defaultProduct.dailyYieldAmount,
-      visualColor: defaultProduct.visualColor
-    }]);
-
-    setTransactions([
-      {
-        id: 'tx-reset',
-        type: 'deposit',
-        amount: 250.00,
-        timestamp: Date.now(),
-        status: 'completed',
-        details: 'Reconfiguração do Sistema Alienware Quantum Ledger'
-      }
-    ]);
+    setReferrals([]);
+    setUserRigs([]);
+    setTransactions([]);
   };
 
   return (

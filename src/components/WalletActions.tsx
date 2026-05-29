@@ -99,11 +99,27 @@ export default function WalletActions() {
     }
   };
 
-  const handleDepositConfirm = () => {
-    // Allows manual check or immediate credit confirmation bypass
-    depositFunds(depositAmount);
-    setDepositStage('input');
-    setActiveTxId('');
+  const handleDepositConfirm = async () => {
+    if (!activeTxId) return;
+    try {
+      const response = await fetch(`/api/deposit/status/${activeTxId}`);
+      const data = await response.json();
+      if (data.success) {
+        if (data.status === 'paid') {
+          depositFunds(depositAmount);
+          setDepositStage('input');
+          setActiveTxId('');
+          alert(`Pagamento de R$ ${depositAmount.toFixed(2)} confirmado com sucesso!`);
+        } else {
+          alert('Pagamento ainda não foi detectado pelo gateway. Se você já pagou, aguarde alguns instantes e verifique novamente.');
+        }
+      } else {
+        alert('Erro ao consultar status junto ao gateway.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de comunicação com o servidor ao consultar status.');
+    }
   };
 
   const handleWithdrawSubmit = async (e: React.FormEvent) => {
@@ -166,8 +182,8 @@ export default function WalletActions() {
             <div className="space-y-5">
               
               <div className="border-b border-slate-800 pb-3">
-                <h4 className="text-sm font-semibold text-slate-100 font-sans tracking-tight">Recarregar Saldo Simulador</h4>
-                <p className="text-3xs text-slate-400">Adicione dinheiro virtual instantâneo via PIX para testar frotas mais sofisticadas.</p>
+                <h4 className="text-sm font-semibold text-slate-100 font-sans tracking-tight">Recarregar Saldo de Conta</h4>
+                <p className="text-3xs text-slate-400">Adicione saldo instantâneo via PIX para adquirir novos nós de hardware.</p>
               </div>
 
               {depositStage === 'input' ? (
@@ -265,7 +281,7 @@ export default function WalletActions() {
                       onClick={handleDepositConfirm}
                       className="py-2.5 bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition font-mono text-3xs font-bold rounded uppercase tracking-wider cursor-pointer"
                     >
-                      ✓ CONFIRMAR PAGAMENTO DIRETAMENTE
+                      ✓ VERIFICAR PAGAMENTO
                     </button>
                     <button
                       onClick={() => setDepositStage('input')}
@@ -285,7 +301,7 @@ export default function WalletActions() {
               
               <div className="border-b border-slate-800 pb-3">
                 <h4 className="text-sm font-semibold text-slate-100 font-sans tracking-tight">Retirar Rendimentos Acumulados</h4>
-                <p className="text-3xs text-slate-400">Transfira os saldo virtuais simulados de rendimentos direto para sua chave PIX fictícia.</p>
+                <p className="text-3xs text-slate-400">Transfira seus rendimentos acumulados diretamente para sua chave PIX cadastrada.</p>
               </div>
 
               {withdrawFeedback ? (
@@ -295,9 +311,9 @@ export default function WalletActions() {
                     <CheckCircle className="w-6 h-6" />
                   </div>
                   <div>
-                    <h5 className="text-2xs font-bold text-slate-200">SAQUE SIMULADO DEFERIDO</h5>
+                    <h5 className="text-2xs font-bold text-slate-200">SAQUE PROCESSADO COM SUCESSO</h5>
                     <p className="text-3xs text-slate-400 mt-1 max-w-sm mx-auto">
-                      {withdrawFeedback.message} O saldo foi debitado com êxito da sandbox computacional.
+                      {withdrawFeedback.message} O saldo foi debitado com êxito de sua carteira Alienware.
                     </p>
                   </div>
                   <button
@@ -384,19 +400,19 @@ export default function WalletActions() {
                     {isProcessingWithdraw ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        AUTENTICANDO CHAVES NA MATRIX...
+                        PROCESSANDO TRANSAÇÃO PIX...
                       </>
                     ) : (
                       <>
                         <Building className="w-3.5 h-3.5" />
-                        REQUISITAR CRÉDITOS FICTÍCIOS R$ {withdrawAmount.toFixed(2)}
+                        REQUISITAR SAQUE R$ {withdrawAmount.toFixed(2)}
                       </>
                     )}
                   </button>
 
                   {balance < withdrawAmount && (
                     <p className="text-center text-4xs font-mono text-rose-450 uppercase">
-                      * Saldo em conta insuficiente para completar esta transferência computacional.
+                      * Saldo em conta insuficiente para completar esta transferência.
                     </p>
                   )}
 

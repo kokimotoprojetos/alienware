@@ -230,7 +230,7 @@ function AppContent() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-3xs font-mono text-gray-500">
           <p className="text-left leading-relaxed">
             PLATAFORMA INTEGRADA ALIENWARE CAPITAL SYSTEM. © 2026 ALIENWARE INTEL COOPERATIVE. <br />
-            SIMULADOR DE HASHRATE E CUSTÓDIA DIÁRIA DE RENDIMENTOS PARA PROCESSAMENTO ALIENWARE INC.
+            PROCESSAMENTO DE HASHRATE E CUSTÓDIA DIÁRIA DE RENDIMENTOS ALIENWARE CAPITAL.
           </p>
           <div className="flex items-center gap-4">
             <span className="text-[#18FF6D] flex items-center gap-2 font-bold uppercase tracking-widest">

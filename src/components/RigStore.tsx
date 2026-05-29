@@ -243,10 +243,10 @@ export default function RigStore() {
 
       {/* Safety Notice Policy */}
       <div className="bg-slate-950/60 p-4 border border-slate-850 rounded-xl flex items-start gap-3">
-        <AlertCircle className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+        <AlertCircle className="w-4 h-4 text-[#18FF6D] shrink-0 mt-0.5" />
         <div className="text-3xs text-slate-500 font-mono space-y-1">
           <p className="font-semibold text-slate-400 uppercase tracking-widest">ALIANÇA DE SEGURANÇA ALIENWARE PLATFORM:</p>
-          <p>Esta aplicação opera em modo de simulação virtual de mineração computacional em nuvem. Cada hardware adquirido simula sua própria carga térmica e garante pagamentos de rendimentos baseados em hashrate artificial. Não há mineração real de agressão ambiental de hardware físico real e os dados são mantidos de forma isolada na sandbox.</p>
+          <p>Esta plataforma opera ativação de hardware em nuvem de alta performance. Cada hardware adquirido garante capacidade de processamento dedicada e pagamentos baseados em hashrate alocado em pools globais.</p>
         </div>
       </div>
 

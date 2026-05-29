@@ -26,8 +26,8 @@ export default function Referrals() {
   const activeInvestors = referrals.filter(r => r.investmentAmount > 0).length;
   const totalCommissions = referrals.reduce((acc, curr) => acc + curr.commissionEarned, 0);
 
-  // Simulated link
-  const promoLink = `https://thealienware.com/invite?pilot=AW_${Math.floor(Math.random() * 8000 + 1000)}`;
+  // Real promotion link
+  const promoLink = `https://www.alienwarecapital.space/register?ref=AW_${Math.floor(Math.random() * 8000 + 1000)}`;
 
   const copyPromoLink = () => {
     navigator.clipboard.writeText(promoLink);
@@ -126,27 +126,6 @@ export default function Referrals() {
             </div>
           </div>
 
-          {/* Interactive Simulation Block */}
-          <div className="bg-slate-950/50 p-4 rounded-xl border border-dashed border-indigo-500/20 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20 mt-0.5">
-                <UserPlus className="w-4 h-4" />
-              </div>
-              <div className="space-y-1 text-left">
-                <h5 className="text-xs font-semibold text-slate-300 font-sans">Simular Novos Aliados Convidando</h5>
-                <p className="text-3xs text-slate-400 max-w-md">
-                  Para fins de teste do sistema de comissões instantâneas, utilize o simulador para criar um convidado randômico comprando hardwares e verifique sua comissão caindo na carteira na hora!
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={addMockReferral}
-              className="w-full py-2.5 bg-indigo-650 hover:bg-indigo-500 text-slate-100 border border-indigo-500/40 hover:shadow-indigo-500/10 hover:scale-101 transition duration-300 rounded-xl font-mono text-3xs font-bold uppercase tracking-wider cursor-pointer"
-            >
-              🚀 SIMULAR NOVO CO-PILOTO NO RECRUTAMENTO
-            </button>
-          </div>
 
         </div>
 

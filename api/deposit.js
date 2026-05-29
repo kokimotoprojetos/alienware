@@ -92,8 +92,7 @@ export default async function handler(req, res) {
       console.error('[IronPay Backend] Failed to parse JSON response:', responseText);
       return res.status(500).json({ 
         success: false, 
-        message: `Resposta inválida do gateway (não é JSON). Status: ${response.status}`,
-        details: responseText
+        message: `Resposta inválida do gateway (não é JSON). Status: ${response.status}. HTML: ${responseText.substring(0, 300)}`
       });
     }
 

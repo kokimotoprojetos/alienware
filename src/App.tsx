@@ -9,14 +9,12 @@ import { SimulatorProvider, useSimulator } from './context/SimulatorContext';
 import Dashboard from './components/Dashboard';
 import RigStore from './components/RigStore';
 import MyFleet from './components/MyFleet';
-import Calculator from './components/Calculator';
 import WalletActions from './components/WalletActions';
 import Referrals from './components/Referrals';
 import { 
   BarChart3, 
   Cpu, 
   Database, 
-  Calculator as CalcIcon, 
   Wallet, 
   Users, 
   Maximize2, 
@@ -29,7 +27,7 @@ import {
 } from 'lucide-react';
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'store' | 'fleet' | 'calculator' | 'wallet' | 'referrals'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'store' | 'fleet' | 'wallet' | 'referrals'>('dashboard');
   const [systemTime, setSystemTime] = useState<string>('');
   
   const { balance, balanceInvested, userRigs } = useSimulator();
@@ -130,7 +128,7 @@ function AppContent() {
         
         {/* Navigation panel */}
         <aside className="fixed bottom-0 left-0 right-0 z-50 bg-[#060608]/95 backdrop-blur-md border-t border-[#18FF6D22] p-2 md:p-0 md:relative md:bottom-auto md:left-auto md:right-auto md:z-0 md:bg-transparent md:border-t-0 md:w-64 md:shrink-0 md:flex md:flex-col md:gap-4">
-          <nav className="grid grid-cols-6 md:flex md:flex-col gap-1 md:gap-2 w-full">
+          <nav className="grid grid-cols-5 md:flex md:flex-col gap-1 md:gap-2 w-full">
             
             <button
               onClick={() => setActiveTab('dashboard')}
@@ -174,19 +172,6 @@ function AppContent() {
                   {userRigs.length}
                 </span>
               )}
-            </button>
-
-            <button
-              onClick={() => setActiveTab('calculator')}
-              className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 p-1.5 md:px-5 md:py-3 rounded-xl font-sans text-xs font-bold uppercase tracking-wider border transition-all duration-300 cursor-pointer w-full text-center md:text-left truncate shrink-0 md:shrink-none ${
-                activeTab === 'calculator'
-                  ? 'bg-[#18FF6D11] border-l-2 md:border-l-2 border-l-[#18FF6D] text-[#18FF6D] shadow-[0_0_15px_rgba(24,255,109,0.15)] border-[#18FF6D44]'
-                  : 'bg-[#121214]/40 text-gray-400 border-[#2A2A2E]/55 hover:bg-[#121214] hover:text-white'
-              }`}
-            >
-              <CalcIcon className="w-4 h-4 shrink-0" />
-              <span className="hidden md:inline">CALCULADORA</span>
-              <span className="inline md:hidden text-[8px] tracking-tight">Calc</span>
             </button>
 
             <button
@@ -234,7 +219,6 @@ function AppContent() {
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'store' && <RigStore />}
           {activeTab === 'fleet' && <MyFleet />}
-          {activeTab === 'calculator' && <Calculator />}
           {activeTab === 'wallet' && <WalletActions />}
           {activeTab === 'referrals' && <Referrals />}
         </div>

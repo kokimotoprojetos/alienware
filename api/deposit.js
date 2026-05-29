@@ -49,33 +49,42 @@ export default async function handler(req, res) {
       });
     }
 
+    // Dynamically resolve product details from the offer checkout page
+    let productHash = 'oz7eie8qea';
+    let productTitle = 'Alien';
+    try {
+      const checkoutRes = await fetch(`https://api.ironpayapp.com.br/api/public/v1/checkout/${IRONPAY_OFFER_HASH}`);
+      if (checkoutRes.ok) {
+        const checkoutData = await checkoutRes.json();
+        if (checkoutData.product) {
+          productHash = checkoutData.product.hash || productHash;
+          productTitle = checkoutData.product.title || productTitle;
+        }
+      }
+    } catch (e) {
+      console.warn('[IronPay Backend] Não foi possível obter detalhes do produto via checkout API, usando fallback:', e.message);
+    }
+
     // Construct checkout body following IronPay requirement
     const requestBody = {
       api_token: IRONPAY_API_TOKEN,
       offer_hash: IRONPAY_OFFER_HASH,
       payment_method: 'pix',
-      amount: amountInCentavos, // Added amount at root
+      amount: amountInCentavos,
       customer: {
         name: name,
         email: email,
         document: cpf ? cpf.replace(/\D/g, '') : '12345678909' // Fallback document if empty
       },
-      cart: {
-        items: {
-          "0": {
-            id: "1",
-            name: "Adicionar Saldo Alienware Capital",
-            price: amountInCentavos,
-            quantity: 1
-          },
-          price: amountInCentavos,
-          quantity: 1
-        },
-        total: {
+      cart: [
+        {
+          title: productTitle,
+          product_hash: productHash,
+          operation_type: 1,
           price: amountInCentavos,
           quantity: 1
         }
-      }
+      ]
     };
 
     console.log('[IronPay Backend] Enviando cobrança para a IronPay...', requestBody);
@@ -88,15 +97,15 @@ export default async function handler(req, res) {
       body: JSON.stringify(requestBody)
     });
 
-    let data;
     const responseText = await response.text();
+    let data;
     try {
       data = JSON.parse(responseText);
     } catch (e) {
       console.error('[IronPay Backend] Failed to parse JSON response:', responseText);
       return res.status(500).json({ 
         success: false, 
-        message: `Resposta inválida do gateway (não é JSON). Status: ${response.status}. HTML: ${responseText.substring(0, 300)}`
+        message: `Resposta inválida do gateway (não é JSON). Status: ${response.status}.`
       });
     }
 
@@ -105,7 +114,7 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ success: false, error: data });
     }
 
-    // Return the response containing the pix_code
+    // Return the response containing the pix details
     return res.status(200).json({
       success: true,
       transaction: data

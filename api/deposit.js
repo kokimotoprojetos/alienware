@@ -84,7 +84,19 @@ export default async function handler(req, res) {
       body: JSON.stringify(requestBody)
     });
 
-    const data = await response.json();
+    let data;
+    const responseText = await response.text();
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('[IronPay Backend] Failed to parse JSON response:', responseText);
+      return res.status(500).json({ 
+        success: false, 
+        message: `Resposta inválida do gateway (não é JSON). Status: ${response.status}`,
+        details: responseText
+      });
+    }
+
     if (!response.ok) {
       console.error('[IronPay Backend] Resposta de erro do gateway:', data);
       return res.status(response.status).json({ success: false, error: data });
@@ -98,6 +110,10 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('[Vercel Serverless] Deposit Error:', error);
-    return res.status(500).json({ success: false, message: 'Erro interno no servidor ao gerar o PIX.' });
+    return res.status(500).json({ 
+      success: false, 
+      message: `Erro interno no servidor: ${error.message}`,
+      stack: error.stack
+    });
   }
 }

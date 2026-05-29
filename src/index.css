@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;650;700&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Map cyan shade variables to neon-green Alienware theme color #18FF6D */
+  --color-cyan-50: #e6ffef;
+  --color-cyan-100: #cdffd5;
+  --color-cyan-200: #9affab;
+  --color-cyan-300: #4eff73;
+  --color-cyan-400: #18FF6D;
+  --color-cyan-500: #18FF6D;
+  --color-cyan-600: #10d453;
+  --color-cyan-700: #0a9e3a;
+  --color-cyan-800: #056b24;
+  --color-cyan-900: #023812;
+  --color-cyan-950: #001a05;
+
+  /* Map slate/neutral shades to match card & base color values from design HTML */
+  --color-slate-950: #060608;
+  --color-slate-900: #121214;
+  --color-slate-850: #18181c;
+  --color-slate-800: #2a2a2e;
+  --color-slate-700: #3f3f46;
+
+  /* Accent highlight color alias */
+  --color-brand: #18FF6D;
+}
+
+/* Custom glassy tech scrollbars for retro sci-fi feeling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #060608;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a2e;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #18FF6D;
+}
+
+/* Base custom interactive animation classes */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 10px rgba(24, 255, 109, 0.4));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 25px rgba(24, 255, 109, 0.85));
+  }
+}
+
+.alienware-glow-pulse {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+body {
+  background-color: #060608;
+  color: #e2e8f0;
+  font-family: var(--font-sans);
+}

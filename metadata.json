@@ -1,0 +1,6 @@
+{
+  "name": "Alienware Investment Hub",
+  "description": "Simulador de investimentos de alto desempenho com tema Alienware. Cada hardware ativo gera rendimentos diários simulados com progresso em tempo real.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

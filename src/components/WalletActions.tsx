@@ -47,7 +47,7 @@ export default function WalletActions() {
     let isSubscribed = true;
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/deposit/status/${activeTxId}`);
+        const response = await fetch(`/api/status?txId=${activeTxId}`);
         const data = await response.json();
         if (isSubscribed && data.success && data.status === 'paid') {
           clearInterval(interval);
@@ -102,7 +102,7 @@ export default function WalletActions() {
   const handleDepositConfirm = async () => {
     if (!activeTxId) return;
     try {
-      const response = await fetch(`/api/deposit/status/${activeTxId}`);
+      const response = await fetch(`/api/status?txId=${activeTxId}`);
       const data = await response.json();
       if (data.success) {
         if (data.status === 'paid') {

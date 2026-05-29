@@ -29,6 +29,9 @@ export default function WalletActions() {
   const [depositAmount, setDepositAmount] = useState<number>(100);
   const [depositStage, setDepositStage] = useState<'input' | 'qr_code'>('input');
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [isGeneratingPix, setIsGeneratingPix] = useState<boolean>(false);
+  const [pixPayloadString, setPixPayloadString] = useState<string>('');
+  const [activeTxId, setActiveTxId] = useState<string>('');
 
   // Withdraw fields
   const [withdrawAmount, setWithdrawAmount] = useState<number>(50);
@@ -37,36 +40,85 @@ export default function WalletActions() {
   const [isProcessingWithdraw, setIsProcessingWithdraw] = useState<boolean>(false);
   const [withdrawFeedback, setWithdrawFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
-  // Generate PIX copy-code
-  const mockPixPayloadString = `00020126580014br.gov.bcb.pix0136932e605d-6f77-4c4c-9f88-8255476a66b55204000053039865405${depositAmount.toFixed(2)}5802BR5925ALIENWARE_INVEST_SIMULATOR`;
+  // Monitor PIX payment status in real-time
+  React.useEffect(() => {
+    if (depositStage !== 'qr_code' || !activeTxId) return;
+
+    let isSubscribed = true;
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/deposit/status/${activeTxId}`);
+        const data = await response.json();
+        if (isSubscribed && data.success && data.status === 'paid') {
+          clearInterval(interval);
+          depositFunds(depositAmount);
+          setDepositStage('input');
+          setActiveTxId('');
+          alert(`Pagamento PIX de R$ ${depositAmount.toFixed(2)} confirmado com sucesso!`);
+        }
+      } catch (error) {
+        console.error('Erro ao consultar status do PIX:', error);
+      }
+    }, 3000);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [depositStage, activeTxId, depositAmount, depositFunds]);
 
   const copyPixCode = () => {
-    navigator.clipboard.writeText(mockPixPayloadString);
+    navigator.clipboard.writeText(pixPayloadString);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleDepositConfirm = () => {
-    depositFunds(depositAmount);
-    setDepositStage('input');
+  const handleGeneratePix = async () => {
+    setIsGeneratingPix(true);
+    try {
+      const response = await fetch('/api/deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount: depositAmount })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPixPayloadString(data.transaction.pix_code);
+        setActiveTxId(data.transaction.id);
+        setDepositStage('qr_code');
+      } else {
+        alert('Erro ao gerar PIX: ' + (data.message || 'Erro no servidor'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de conexão ao gerar o PIX.');
+    } finally {
+      setIsGeneratingPix(false);
+    }
   };
 
-  const handleWithdrawSubmit = (e: React.FormEvent) => {
+  const handleDepositConfirm = () => {
+    // Allows manual check or immediate credit confirmation bypass
+    depositFunds(depositAmount);
+    setDepositStage('input');
+    setActiveTxId('');
+  };
+
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pixKey.trim()) return;
 
     setIsProcessingWithdraw(true);
     setWithdrawFeedback(null);
 
-    // Simulate cyber blocks transfer processing duration of 2 seconds
-    setTimeout(() => {
-      const response = withdrawFunds(withdrawAmount, pixKey);
-      setIsProcessingWithdraw(false);
-      setWithdrawFeedback(response);
-      if (response.success) {
-        setPixKey('');
-      }
-    }, 2000);
+    const response = await withdrawFunds(withdrawAmount, pixKey);
+    setIsProcessingWithdraw(false);
+    setWithdrawFeedback(response);
+    if (response.success) {
+      setPixKey('');
+    }
   };
 
   return (
@@ -159,10 +211,11 @@ export default function WalletActions() {
                   </div>
 
                   <button
-                    onClick={() => setDepositStage('qr_code')}
-                    className="w-full py-3.5 bg-gradient-to-r from-cyan-505 via-cyan-500 to-indigo-650 hover:scale-101 hover:shadow-cyan-500/10 text-slate-950 font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition duration-300 shadow-lg cursor-pointer"
+                    onClick={handleGeneratePix}
+                    disabled={isGeneratingPix}
+                    className="w-full py-3.5 bg-gradient-to-r from-cyan-505 via-cyan-500 to-indigo-650 hover:scale-101 hover:shadow-cyan-500/10 text-slate-950 font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition duration-300 shadow-lg cursor-pointer disabled:opacity-50"
                   >
-                    GERAR QR CODE DE SIMULAÇÃO
+                    {isGeneratingPix ? 'SOLICITANDO TRANSACÃO NA MATRIX...' : 'GERAR COBRANÇA PIX'}
                   </button>
 
                 </div>
@@ -171,23 +224,33 @@ export default function WalletActions() {
                 <div className="text-center space-y-5 py-2">
                   <div className="mx-auto w-40 h-40 bg-white p-2.5 rounded-xl border border-slate-800 flex items-center justify-center shadow-lg relative group">
                     <div className="absolute inset-0 bg-cyan-400/5 filter blur rounded-xl group-hover:scale-105 transition" />
-                    {/* Retro Styled procedural QR Code simulation */}
-                    <div className="w-full h-full relative z-10 flex flex-col items-center justify-center bg-slate-100/10 border-2 border-dashed border-slate-400 rounded">
-                      <QrCode className="w-16 h-16 text-slate-900" />
-                      <span className="text-5xs font-mono text-slate-600 mt-1 uppercase tracking-widest">Procedural PIX Qr</span>
+                    {/* Render dynamic scanable QR code from payload */}
+                    <div className="w-full h-full relative z-10 flex flex-col items-center justify-center bg-slate-100/10 border-2 border-dashed border-slate-400 rounded overflow-hidden">
+                      {pixPayloadString ? (
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(pixPayloadString)}`} 
+                          alt="PIX QR Code"
+                          className="w-full h-full object-contain p-1"
+                        />
+                      ) : (
+                        <>
+                          <QrCode className="w-16 h-16 text-slate-900" />
+                          <span className="text-5xs font-mono text-slate-600 mt-1 uppercase tracking-widest">Processando PIX Qr</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <h5 className="text-2xs font-semibold text-slate-250 font-mono">PIX GERADO COM SUCESSO COLETIVO</h5>
+                    <h5 className="text-2xs font-semibold text-slate-250 font-mono">PIX GERADO COM SUCESSO</h5>
                     <p className="text-3xs text-slate-400 max-w-sm mx-auto">
-                      Copie o código abaixo para simular o "Copia e Cola" ou pressione o botão de ativação instantânea fictícia para recarregar.
+                      Escaneie o QR Code acima ou use o Copia e Cola para realizar o pagamento. O saldo será creditado automaticamente.
                     </p>
                   </div>
 
                   {/* Copy code input */}
                   <div className="flex bg-slate-950 border border-slate-850 p-2.5 rounded-xl max-w-sm mx-auto justify-between items-center gap-2">
-                    <span className="text-4xs font-mono text-slate-500 truncate w-48 text-left">{mockPixPayloadString}</span>
+                    <span className="text-4xs font-mono text-slate-500 truncate w-48 text-left">{pixPayloadString}</span>
                     <button
                       onClick={copyPixCode}
                       className="px-2 py-1.5 bg-slate-850 hover:bg-slate-800 border border-slate-750 font-mono text-3xs text-slate-300 rounded uppercase flex items-center gap-1 shrink-0 transition cursor-pointer"

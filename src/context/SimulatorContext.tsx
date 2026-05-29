@@ -23,7 +23,7 @@ interface SimulatorContextType {
   claimYield: () => void;
   claimIndividualYield: (userRigId: string) => void;
   depositFunds: (amount: number) => void;
-  withdrawFunds: (amount: number, pixKey: string) => { success: boolean; message: string };
+  withdrawFunds: (amount: number, pixKey: string) => Promise<{ success: boolean; message: string }>;
   toggleSpeed: () => void;
   claimCheckIn: () => void;
   claimMissionReward: (missionId: string) => void;
@@ -348,8 +348,8 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(prev => [tx, ...prev]);
   };
 
-  // Withdraw simulated funds
-  const withdrawFunds = (amount: number, pixKey: string): { success: boolean; message: string } => {
+  // Withdraw real/simulated funds via backend integration with IronPay
+  const withdrawFunds = async (amount: number, pixKey: string): Promise<{ success: boolean; message: string }> => {
     if (amount < 20.00) {
       return { success: false, message: 'O valor mínimo para saque é de R$ 20,00.' };
     }
@@ -357,19 +357,46 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return { success: false, message: 'Saldo insuficiente para esta transação.' };
     }
 
-    setBalance(prev => prev - amount);
+    try {
+      const response = await fetch('/api/withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount, pixKey })
+      });
 
-    const tx: Transaction = {
-      id: `tx-${Date.now()}`,
-      type: 'withdraw',
-      amount: amount,
-      timestamp: Date.now(),
-      status: 'completed',
-      details: `Saque PIX enviado para Chave: ${pixKey}`
-    };
-    setTransactions(prev => [tx, ...prev]);
+      const data = await response.json();
 
-    return { success: true, message: `Saque de R$ ${amount.toFixed(2)} processado com imediato sucesso na rede de transação!` };
+      if (!response.ok || !data.success) {
+        return { 
+          success: false, 
+          message: data.message || 'Erro ao processar o saque junto ao gateway.' 
+        };
+      }
+
+      // Deduct from balance only after gateway approval
+      setBalance(prev => prev - amount);
+
+      const tx: Transaction = {
+        id: `tx-${Date.now()}`,
+        type: 'withdraw',
+        amount: amount,
+        timestamp: Date.now(),
+        status: 'completed',
+        details: `Saque PIX enviado para Chave: ${pixKey}`
+      };
+      setTransactions(prev => [tx, ...prev]);
+
+      return { success: true, message: data.message };
+
+    } catch (error) {
+      console.error('[SimulatorContext] Withdraw error:', error);
+      return { 
+        success: false, 
+        message: 'Falha de comunicação com o servidor de pagamentos.' 
+      };
+    }
   };
 
   // Toggle speed modifiers: 1x (Real), 60x (1s = 1m), 3600x (1s = 1h), 86400x (1s = 24h)

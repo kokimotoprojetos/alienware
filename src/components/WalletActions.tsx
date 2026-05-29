@@ -103,8 +103,8 @@ export default function WalletActions() {
         // Real checkout transaction returned by IronPay has transaction details inside transaction.data or transaction
         // Let's fallback safely depending on payload mapping
         const tx = data.transaction;
-        const code = tx.pix_code || (tx.data ? tx.data.pix_code : '') || '';
-        const id = tx.id || (tx.data ? tx.data.id : '') || '';
+        const code = (tx.pix && tx.pix.pix_qr_code) || tx.pix_code || (tx.data ? (tx.data.pix && tx.data.pix.pix_qr_code) || tx.data.pix_code : '') || '';
+        const id = tx.hash || tx.id || (tx.data ? tx.data.hash || tx.data.id : '') || '';
 
         setPixPayloadString(code);
         setActiveTxId(id);

@@ -89,7 +89,8 @@ export default function WalletActions() {
         setActiveTxId(data.transaction.id);
         setDepositStage('qr_code');
       } else {
-        alert('Erro ao gerar PIX: ' + (data.message || 'Erro no servidor'));
+        const detail = data.error ? JSON.stringify(data.error) : (data.message || 'Erro no servidor');
+        alert('Erro ao gerar PIX: ' + detail);
       }
     } catch (error) {
       console.error(error);

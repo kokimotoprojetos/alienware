@@ -61,12 +61,14 @@ export default async function handler(req, res) {
         document: cpf ? cpf.replace(/\D/g, '') : '12345678909' // Fallback document if empty
       },
       cart: {
-        items: {
-          id: "1",
-          name: "Adicionar Saldo Alienware Capital",
-          price: amountInCentavos,
-          quantity: 1
-        },
+        items: [
+          {
+            id: "1",
+            name: "Adicionar Saldo Alienware Capital",
+            price: amountInCentavos,
+            quantity: 1
+          }
+        ],
         total: {
           price: amountInCentavos,
           quantity: 1

@@ -261,7 +261,21 @@ function AppContent() {
   );
 }
 
+import AdminPanel from './components/AdminPanel';
+
 export default function App() {
+  const [isAdminPath, setIsAdminPath] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (window.location.pathname === '/gozei') {
+      setIsAdminPath(true);
+    }
+  }, []);
+
+  if (isAdminPath) {
+    return <AdminPanel />;
+  }
+
   return (
     <SimulatorProvider>
       <AppContent />

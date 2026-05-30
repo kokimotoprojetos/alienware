@@ -54,7 +54,7 @@ export default function WalletActions() {
       try {
         const response = await fetch(`/api/status?txId=${activeTxId}`);
         const data = await response.json();
-        if (isSubscribed && data.success && data.status === 'paid') {
+        if (isSubscribed && data.success && (data.status === 'paid' || data.status === 'approved' || data.status === 'completed')) {
           clearInterval(interval);
           depositFunds(depositAmount);
           setDepositStage('input');
@@ -118,29 +118,6 @@ export default function WalletActions() {
       alert('Erro de conexão ao gerar o PIX.');
     } finally {
       setIsGeneratingPix(false);
-    }
-  };
-
-  const handleDepositConfirm = async () => {
-    if (!activeTxId) return;
-    try {
-      const response = await fetch(`/api/status?txId=${activeTxId}`);
-      const data = await response.json();
-      if (data.success) {
-        if (data.status === 'paid') {
-          depositFunds(depositAmount);
-          setDepositStage('input');
-          setActiveTxId('');
-          alert(`Pagamento de R$ ${depositAmount.toFixed(2)} confirmado com sucesso!`);
-        } else {
-          alert('Pagamento ainda não foi detectado pelo gateway. Se você já pagou, aguarde alguns instantes e verifique novamente.');
-        }
-      } else {
-        alert('Erro ao consultar status junto ao gateway.');
-      }
-    } catch (error) {
-      console.error(error);
-      alert('Erro de comunicação com o servidor ao consultar status.');
     }
   };
 
@@ -332,18 +309,16 @@ export default function WalletActions() {
                     </button>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-800/80 max-w-sm mx-auto grid grid-cols-2 gap-2">
-                    <button
-                      onClick={handleDepositConfirm}
-                      className="py-2.5 bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition font-mono text-3xs font-bold rounded uppercase tracking-wider cursor-pointer"
-                    >
-                      ✓ VERIFICAR PAGAMENTO
-                    </button>
+                  <div className="pt-2 border-t border-slate-800/80 max-w-sm mx-auto flex flex-col gap-2">
+                    <div className="py-2.5 bg-[#18FF6D]/15 border border-[#18FF6D44] text-[#18FF6D] font-mono text-3xs font-bold rounded uppercase tracking-wider flex items-center justify-center gap-2">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      MONITORANDO PAGAMENTO AUTOMATICAMENTE...
+                    </div>
                     <button
                       onClick={() => setDepositStage('input')}
-                      className="py-2.5 bg-slate-850 border border-slate-750 text-slate-400 hover:text-slate-205 transition font-mono text-3xs rounded uppercase cursor-pointer"
+                      className="py-2.5 bg-slate-850 border border-slate-750 text-slate-450 hover:text-slate-205 transition font-mono text-3xs rounded uppercase cursor-pointer"
                     >
-                      VOLTAR E ALTERAR
+                      VOLTAR E ALTERAR VALOR
                     </button>
                   </div>
 

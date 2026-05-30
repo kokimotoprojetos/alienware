@@ -34,6 +34,7 @@ export default function AdminPanel() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
   const [adminUsername, setAdminUsername] = useState<string>('');
   const [adminPassword, setAdminPassword] = useState<string>('');
+  const [adminToken, setAdminToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Users data states
@@ -44,6 +45,16 @@ export default function AdminPanel() {
   // Edit balance modal states
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [newBalance, setNewBalance] = useState<string>('');
+
+  // Persist session check on mount
+  useEffect(() => {
+    const token = sessionStorage.getItem('admin_token');
+    if (token) {
+      setIsAdminLoggedIn(true);
+      setAdminToken(token);
+      fetchProfiles(token);
+    }
+  }, []);
 
   // Stats
   const totalUsers = profiles.length;
@@ -57,27 +68,53 @@ export default function AdminPanel() {
     }
   }, 0);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
-    if (adminUsername === 'admin' && adminPassword === 'alienwareadmin2026') {
-      setIsAdminLoggedIn(true);
-      fetchProfiles();
-    } else {
-      setAuthError('Credenciais administrativas incorretas.');
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/admin-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username: adminUsername, password: adminPassword })
+      });
+      
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setIsAdminLoggedIn(true);
+        setAdminToken(data.token);
+        sessionStorage.setItem('admin_token', data.token);
+        fetchProfiles(data.token);
+      } else {
+        setAuthError(data.message || 'Credenciais administrativas incorretas.');
+      }
+    } catch (err) {
+      console.error(err);
+      setAuthError('Erro de rede ao autenticar no servidor.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const fetchProfiles = async () => {
+  const fetchProfiles = async (tokenOverride?: string) => {
+    const token = tokenOverride || adminToken || sessionStorage.getItem('admin_token');
+    if (!token) return;
+
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProfiles(data || []);
+      const response = await fetch('/api/admin-profiles', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Não foi possível buscar perfis.');
+      }
+      setProfiles(data.profiles || []);
     } catch (e: any) {
       console.error(e);
       alert('Erro ao buscar perfis: ' + e.message);
@@ -96,14 +133,27 @@ export default function AdminPanel() {
       return;
     }
 
+    const token = adminToken || sessionStorage.getItem('admin_token');
+    if (!token) {
+      alert('Sessão administrativa expirada ou inválida. Por favor, logue novamente.');
+      return;
+    }
+
     setActionLoading(editingProfile.id);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ balance: parsedBalance })
-        .eq('id', editingProfile.id);
+      const response = await fetch('/api/admin-update-balance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: editingProfile.id, balance: parsedBalance })
+      });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Erro ao atualizar saldo.');
+      }
 
       // Update local state
       setProfiles(prev => prev.map(p => p.id === editingProfile.id ? { ...p, balance: parsedBalance } : p));

@@ -229,9 +229,9 @@ export default function RigStore() {
                   {status === 'idle' && `ATIVAR HARDWARE (R$ ${prod.cost.toFixed(2)})`}
                 </button>
 
-                {status === 'error' && (
+                 {status === 'error' && (
                   <p className="text-4xs text-rose-400 text-center font-mono">
-                    * Recarregue sua carteira simulada na seção &quot;Carteira&quot; via código PIX para adquirir este nó.
+                    * Recarregue sua carteira na seção &quot;Carteira&quot; via código PIX para adquirir este nó.
                   </p>
                 )}
               </div>

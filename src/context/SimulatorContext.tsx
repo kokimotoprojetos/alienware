@@ -87,6 +87,10 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Load session from localStorage on mount & sync with Supabase
   useEffect(() => {
+    if (!supabase) {
+      console.warn('[Supabase Client] Não inicializado. Pulando carregamento automático.');
+      return;
+    }
     const stored = localStorage.getItem('aw_logged_user');
     if (stored) {
       try {
@@ -119,7 +123,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Sync state to Supabase when it changes
   useEffect(() => {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     const syncData = async () => {
       try {
@@ -145,6 +149,10 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Auth Functions
   const login = async (phoneOrEmail: string, passwordRequired: string): Promise<boolean> => {
+    if (!supabase) {
+      alert('Configuração ausente: Por favor, adicione as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no painel de controle da Vercel para liberar o login e banco de dados real.');
+      return false;
+    }
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -174,6 +182,10 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const register = async (phoneOrEmail: string, passwordRequired: string): Promise<boolean> => {
+    if (!supabase) {
+      alert('Configuração ausente: Por favor, adicione as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no painel de controle da Vercel para liberar o cadastro e banco de dados real.');
+      return false;
+    }
     try {
       const { data: existing } = await supabase
         .from('profiles')

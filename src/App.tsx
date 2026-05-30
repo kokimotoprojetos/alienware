@@ -11,6 +11,7 @@ import RigStore from './components/RigStore';
 import MyFleet from './components/MyFleet';
 import WalletActions from './components/WalletActions';
 import Referrals from './components/Referrals';
+import AuthPage from './components/AuthPage';
 import { 
   BarChart3, 
   Cpu, 
@@ -23,14 +24,20 @@ import {
   Zap, 
   Thermometer, 
   CheckCircle,
-  Clock
+  Clock,
+  LogOut
 } from 'lucide-react';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'store' | 'fleet' | 'wallet' | 'referrals'>('dashboard');
   const [systemTime, setSystemTime] = useState<string>('');
   
-  const { balance, balanceInvested, userRigs } = useSimulator();
+  const { balance, balanceInvested, userRigs, user, logout } = useSimulator();
+
+  // Redirect to AuthPage if user session not active
+  if (!user) {
+    return <AuthPage />;
+  }
 
   // Tick local real-world clock for futuristic dashboard feeling
   useEffect(() => {
@@ -198,6 +205,15 @@ function AppContent() {
               <Users className="w-4 h-4 shrink-0" />
               <span className="hidden md:inline">MÁQUINA DIRETA</span>
               <span className="inline md:hidden text-[8px] tracking-tight">Indicar</span>
+            </button>
+
+            <button
+              onClick={logout}
+              className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 p-1.5 md:px-5 md:py-3 rounded-xl font-sans text-xs font-bold uppercase tracking-wider border border-red-500/20 bg-red-950/10 text-red-400 hover:bg-red-900/20 transition-all duration-300 cursor-pointer w-full text-center md:text-left truncate shrink-0 md:shrink-none mt-2"
+            >
+              <LogOut className="w-4 h-4 shrink-0 text-red-450" />
+              <span className="hidden md:inline font-sans text-red-400">Desconectar</span>
+              <span className="inline md:hidden text-[8px] tracking-tight text-red-400">Sair</span>
             </button>
 
           </nav>

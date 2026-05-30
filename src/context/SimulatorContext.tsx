@@ -5,9 +5,11 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { InvestmentProduct, UserRig, Transaction, ReferralPilot } from '../types';
-import { INITIAL_PRODUCTS, INITIAL_MISSIONS, COMMISSIONS, MOCK_PILOTS, Mission } from '../data';
+import { INITIAL_PRODUCTS, INITIAL_MISSIONS, COMMISSIONS, ReferralPilot as DataPilot } from '../data';
+import { supabase } from '../lib/supabase';
 
 interface SimulatorContextType {
+  user: { id: string; phone_or_email: string } | null;
   balance: number;
   balanceInvested: number;
   userRigs: UserRig[];
@@ -18,6 +20,9 @@ interface SimulatorContextType {
   simulationSpeed: number; // multiplier: 1, 60, 3600, 86400
   simulationTimeElapsed: number; // accumulated simulated seconds
   checkInClaimedToday: boolean;
+  login: (phoneOrEmail: string, passwordRequired: string) => Promise<boolean>;
+  register: (phoneOrEmail: string, passwordRequired: string) => Promise<boolean>;
+  logout: () => void;
   buyHardware: (productId: string) => boolean;
   sellHardware: (userRigId: string) => void;
   claimYield: () => void;
@@ -42,48 +47,19 @@ export const useSimulator = () => {
 };
 
 export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load initial local states or fallback
-  const [balance, setBalance] = useState<number>(() => {
-    const stored = localStorage.getItem('aw_balance');
-    return stored ? parseFloat(stored) : 0.00; // Real account starts with 0
-  });
+  // Session state
+  const [user, setUser] = useState<{ id: string; phone_or_email: string } | null>(null);
 
-  const [userRigs, setUserRigs] = useState<UserRig[]>(() => {
-    const stored = localStorage.getItem('aw_user_rigs');
-    if (stored) return JSON.parse(stored);
-    return []; // Real account starts with 0 hardware nodes
-  });
-
-  const [unclaimedYield, setUnclaimedYield] = useState<number>(() => {
-    const stored = localStorage.getItem('aw_unclaimed_yield');
-    return stored ? parseFloat(stored) : 0.00;
-  });
-
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const stored = localStorage.getItem('aw_transactions');
-    if (stored) return JSON.parse(stored);
-    return []; // Real account starts with no transaction history
-  });
-
-  const [referrals, setReferrals] = useState<ReferralPilot[]>(() => {
-    const stored = localStorage.getItem('aw_referrals');
-    return stored ? JSON.parse(stored) : []; // Real account starts with no referrals
-  });
-
-  const [completedMissions, setCompletedMissions] = useState<string[]>(() => {
-    const stored = localStorage.getItem('aw_completed_missions');
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  const [simulationSpeed, setSimulationSpeed] = useState<number>(() => {
-    return 1; // Locked to 1x (real time) for live operations
-  });
-
+  // States
+  const [balance, setBalance] = useState<number>(0.00);
+  const [userRigs, setUserRigs] = useState<UserRig[]>([]);
+  const [unclaimedYield, setUnclaimedYield] = useState<number>(0.00);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [referrals, setReferrals] = useState<ReferralPilot[]>([]);
+  const [completedMissions, setCompletedMissions] = useState<string[]>([]);
+  const [simulationSpeed] = useState<number>(1); // Locked to 1x (real time) for live operations
   const [simulationTimeElapsed, setSimulationTimeElapsed] = useState<number>(0);
-  const [checkInClaimedToday, setCheckInClaimedToday] = useState<boolean>(() => {
-    const stored = localStorage.getItem('aw_checkin_claimed');
-    return stored === 'true';
-  });
+  const [checkInClaimedToday, setCheckInClaimedToday] = useState<boolean>(false);
 
   // Calculate dynamic invested balance
   const balanceInvested = userRigs.reduce((acc, curr) => acc + curr.cost, 0);
@@ -95,75 +71,179 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const userRigsRef = useRef(userRigs);
   userRigsRef.current = userRigs;
 
-  // Save states on change
+  // Load session from localStorage on mount & sync with Supabase
   useEffect(() => {
-    localStorage.setItem('aw_balance', balance.toString());
-  }, [balance]);
+    const stored = localStorage.getItem('aw_logged_user');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.id) {
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', parsed.id)
+            .single()
+            .then(({ data, error }) => {
+              if (data && !error) {
+                setUser({ id: data.id, phone_or_email: data.phone_or_email });
+                setBalance(Number(data.balance));
+                setUserRigs(data.user_rigs || []);
+                setTransactions(data.transactions || []);
+                setReferrals(data.referrals || []);
+                setCompletedMissions(data.completed_missions || []);
+                setCheckInClaimedToday(data.checkin_claimed_today || false);
+              } else {
+                logout();
+              }
+            });
+        }
+      } catch (e) {
+        console.error('Failed to parse logged user:', e);
+      }
+    }
+  }, []);
 
+  // Sync state to Supabase when it changes
   useEffect(() => {
-    localStorage.setItem('aw_user_rigs', JSON.stringify(userRigs));
-  }, [userRigs]);
+    if (!user) return;
 
-  useEffect(() => {
-    localStorage.setItem('aw_unclaimed_yield', unclaimedYield.toString());
-  }, [unclaimedYield]);
+    const syncData = async () => {
+      try {
+        await supabase
+          .from('profiles')
+          .update({
+            balance,
+            user_rigs: userRigs,
+            transactions,
+            referrals,
+            completed_missions: completedMissions,
+            checkin_claimed_today: checkInClaimedToday
+          })
+          .eq('id', user.id);
+      } catch (e) {
+        console.error('Failed to sync data with Supabase:', e);
+      }
+    };
 
-  useEffect(() => {
-    localStorage.setItem('aw_transactions', JSON.stringify(transactions));
-  }, [transactions]);
+    const timeout = setTimeout(syncData, 1000);
+    return () => clearTimeout(timeout);
+  }, [balance, userRigs, transactions, referrals, completedMissions, checkInClaimedToday, user]);
 
-  useEffect(() => {
-    localStorage.setItem('aw_referrals', JSON.stringify(referrals));
-  }, [referrals]);
+  // Auth Functions
+  const login = async (phoneOrEmail: string, passwordRequired: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('phone_or_email', phoneOrEmail)
+        .eq('password', passwordRequired)
+        .single();
 
-  useEffect(() => {
-    localStorage.setItem('aw_completed_missions', JSON.stringify(completedMissions));
-  }, [completedMissions]);
+      if (error || !data) {
+        return false;
+      }
 
-  useEffect(() => {
-    localStorage.setItem('aw_sim_speed', simulationSpeed.toString());
-  }, [simulationSpeed]);
+      setUser({ id: data.id, phone_or_email: data.phone_or_email });
+      setBalance(Number(data.balance));
+      setUserRigs(data.user_rigs || []);
+      setTransactions(data.transactions || []);
+      setReferrals(data.referrals || []);
+      setCompletedMissions(data.completed_missions || []);
+      setCheckInClaimedToday(data.checkin_claimed_today || false);
+      
+      localStorage.setItem('aw_logged_user', JSON.stringify({ id: data.id, phone_or_email: data.phone_or_email }));
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
 
-  useEffect(() => {
-    localStorage.setItem('aw_checkin_claimed', checkInClaimedToday ? 'true' : 'false');
-  }, [checkInClaimedToday]);
+  const register = async (phoneOrEmail: string, passwordRequired: string): Promise<boolean> => {
+    try {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('phone_or_email', phoneOrEmail)
+        .maybeSingle();
+
+      if (existing) {
+        return false;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([{
+          phone_or_email: phoneOrEmail,
+          password: passwordRequired,
+          balance: 0.00,
+          user_rigs: [],
+          transactions: [],
+          referrals: [],
+          completed_missions: [],
+          checkin_claimed_today: false
+        }])
+        .select()
+        .single();
+
+      if (error || !data) {
+        console.error('Registration error:', error);
+        return false;
+      }
+
+      setUser({ id: data.id, phone_or_email: data.phone_or_email });
+      setBalance(0.00);
+      setUserRigs([]);
+      setTransactions([]);
+      setReferrals([]);
+      setCompletedMissions([]);
+      setCheckInClaimedToday(false);
+      
+      localStorage.setItem('aw_logged_user', JSON.stringify({ id: data.id, phone_or_email: data.phone_or_email }));
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('aw_logged_user');
+    setBalance(0.00);
+    setUserRigs([]);
+    setTransactions([]);
+    setReferrals([]);
+    setCompletedMissions([]);
+    setCheckInClaimedToday(false);
+    setUnclaimedYield(0);
+  };
 
   // Core Simulation Loop using interval
   useEffect(() => {
     const tickInterval = 1000; // Tick every 1s
     
     const interval = setInterval(() => {
-      // Amount of simulated seconds that passed in this tick
-      // speed 1 = 1s, speed 60 = 60s (1min), speed 3600 = 1hr, speed 86400 = 1day
       const simSecondsPassed = speedRef.current;
-      
       setSimulationTimeElapsed(prev => prev + simSecondsPassed);
 
       if (userRigsRef.current.length === 0) return;
 
-      // Update unclaimed yields for each rig incrementally
-      // In 1 simulated day, a rig earns dailyYieldAmount
-      // Daily seconds = 86400
       let totalTickYield = 0;
-      
       setUserRigs(prevRigs => 
         prevRigs.map(rig => {
           const dailyYield = rig.dailyYieldAmount;
-          // Yield earned in this tick
           const earnedOnTick = (dailyYield / 86400) * simSecondsPassed;
           totalTickYield += earnedOnTick;
           
           return {
             ...rig,
-            // Track total minutes accrued by this rig under simulation
             accumulatedMinutes: rig.accumulatedMinutes + (simSecondsPassed / 60)
           };
         })
       );
 
-      // Increment total unclaimed yield state
       setUnclaimedYield(prev => prev + totalTickYield);
-
     }, tickInterval);
 
     return () => clearInterval(interval);
@@ -175,10 +255,8 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!product) return false;
     if (balance < product.cost) return false;
 
-    // Deduct cost
     setBalance(prev => prev - product.cost);
 
-    // Add User Rig
     const newRig: UserRig = {
       id: `rig-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       productId: product.id,
@@ -196,7 +274,6 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     setUserRigs(prev => [...prev, newRig]);
 
-    // Save transaction
     const tx: Transaction = {
       id: `tx-${Date.now()}`,
       type: 'buy_hardware',
@@ -217,13 +294,12 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const refundAmount = rig.cost * 0.70;
 
-    // Filter out
     setUserRigs(prev => prev.filter(r => r.id !== userRigId));
     setBalance(prev => prev + refundAmount);
 
     const tx: Transaction = {
       id: `tx-${Date.now()}`,
-      type: 'withdraw', // negative from nodes fleet
+      type: 'withdraw',
       amount: refundAmount,
       timestamp: Date.now(),
       status: 'completed',
@@ -240,7 +316,6 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setBalance(prev => prev + claimed);
     setUnclaimedYield(0);
 
-    // Save transaction
     const tx: Transaction = {
       id: `tx-${Date.now()}`,
       type: 'claim_yield',
@@ -251,7 +326,6 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
     setTransactions(prev => [tx, ...prev]);
 
-    // Reset accumulated times on all rigs to represent payout claimed point
     setUserRigs(prev => 
       prev.map(rig => ({
         ...rig,
@@ -266,20 +340,14 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const rig = userRigs.find(r => r.id === userRigId);
     if (!rig) return;
 
-    // Calculate yield proportional to its accumulated minutes
-    // Yield index per simulated minute: (dailyYieldAmount / 1440)
-    // 1440 mins = 24 hours
     const accumulatedMins = rig.accumulatedMinutes;
-    if (accumulatedMins <= 0.5) return; // Need at least some min to claim
+    if (accumulatedMins <= 0.5) return;
 
     const individualEarned = (rig.dailyYieldAmount / 1440) * accumulatedMins;
     
     setBalance(prev => prev + individualEarned);
-    
-    // Deduct from total unclaimed tally
     setUnclaimedYield(prev => Math.max(0, prev - individualEarned));
 
-    // Reset this rig accumulated
     setUserRigs(prev => 
       prev.map(r => r.id === userRigId ? {
         ...r, 
@@ -299,7 +367,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(prev => [tx, ...prev]);
   };
 
-  // Deposit funds (simulated PIX)
+  // Deposit funds (real PIX callbacks update balance via this call)
   const depositFunds = (amount: number) => {
     setBalance(prev => prev + amount);
 
@@ -314,7 +382,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(prev => [tx, ...prev]);
   };
 
-  // Withdraw real/simulated funds via backend integration with IronPay
+  // Withdraw funds via backend integration with IronPay
   const withdrawFunds = async (amount: number, pixKey: string): Promise<{ success: boolean; message: string }> => {
     if (amount < 20.00) {
       return { success: false, message: 'O valor mínimo para saque é de R$ 20,00.' };
@@ -341,7 +409,6 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         };
       }
 
-      // Deduct from balance only after gateway approval
       setBalance(prev => prev - amount);
 
       const tx: Transaction = {
@@ -365,21 +432,16 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Toggle speed modifiers: 1x (Real), 60x (1s = 1m), 3600x (1s = 1h), 86400x (1s = 24h)
+  // Toggle speed modifiers (mock speed toggler deleted for live center, mock kept for fallback)
   const toggleSpeed = () => {
-    setSimulationSpeed(current => {
-      if (current === 1) return 60;
-      if (current === 60) return 3600;
-      if (current === 3600) return 86400;
-      return 1;
-    });
+    // Speed locked in production
   };
 
   // Claim Daily Coolant Checkin
   const claimCheckIn = () => {
     if (checkInClaimedToday) return;
 
-    const checkInReward = 3.50; // daily cooling stipend
+    const checkInReward = 3.50;
     setBalance(prev => prev + checkInReward);
     setCheckInClaimedToday(true);
 
@@ -417,8 +479,6 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const addMockReferral = () => {
     const usersList = ['XenonPilot_99', 'CypherNode_Alien', 'QuantumGamer_Z', 'NebulaDrifter', 'RazerOverlord'];
     const chosenName = usersList[Math.floor(Math.random() * usersList.length)] + `_${Math.floor(Math.random()*90 + 10)}`;
-    
-    // Random buy amount from simulated invitee
     const buyInvests = [0, 50, 50, 250, 250, 1000];
     const investment = buyInvests[Math.floor(Math.random() * buyInvests.length)];
     const commission = investment * COMMISSIONS.level1;
@@ -449,21 +509,10 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Reset Simulator Storage
+  // Reset local progress
   const resetAllSimulation = () => {
-    localStorage.removeItem('aw_balance');
-    localStorage.removeItem('aw_user_rigs');
-    localStorage.removeItem('aw_unclaimed_yield');
-    localStorage.removeItem('aw_transactions');
-    localStorage.removeItem('aw_referrals');
-    localStorage.removeItem('aw_completed_missions');
-    localStorage.removeItem('aw_sim_speed');
-    localStorage.removeItem('aw_checkin_claimed');
-
-    // Reset local states to default (Clean real account values)
     setBalance(0.00);
     setUnclaimedYield(0);
-    setSimulationSpeed(1);
     setCheckInClaimedToday(false);
     setCompletedMissions([]);
     setReferrals([]);
@@ -473,6 +522,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   return (
     <SimulatorContext.Provider value={{
+      user,
       balance,
       balanceInvested,
       userRigs,
@@ -483,6 +533,9 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       simulationSpeed,
       simulationTimeElapsed,
       checkInClaimedToday,
+      login,
+      register,
+      logout,
       buyHardware,
       sellHardware,
       claimYield,

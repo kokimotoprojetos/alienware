@@ -32,9 +32,9 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     codename: 'HYBRID-NODE-15D',
     description: 'Nó móvel de processamento paralelo equipado com clock turbo estável. Excelente balanço para operações de 15 dias.',
     tier: 'Aurora',
-    cost: 250, // R$ 250,00
-    dailyYieldPercent: 4.0, // 4% ao dia
-    dailyYieldAmount: 10.00, // R$ 10.00/dia
+    cost: 120, // R$ 120,00
+    dailyYieldPercent: 15.0, // 15% ao dia
+    dailyYieldAmount: 18.00, // R$ 18.00/dia
     efficiency: '97.1%',
     hashrate: '2.4 GH/s',
     powerConsumption: 450, // 450W

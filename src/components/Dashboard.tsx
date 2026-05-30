@@ -328,7 +328,7 @@ export default function Dashboard() {
               <div className="text-xl">❄️</div>
             </div>
             <p className="text-xs text-slate-400 mb-4">
-              Reivindique sua cota diária de resfriamento para ganhar um bônus imediato de **R$ 3,50** no saldo de investimentos.
+              Reivindique sua cota diária de resfriamento para ganhar um bônus imediato de **R$ 0,50** no saldo de investimentos.
             </p>
 
             <button
@@ -340,7 +340,7 @@ export default function Dashboard() {
                   : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover:shadow-[0_0_20px_rgba(16,185,129,0.2)] cursor-pointer'
               }`}
             >
-              {checkInClaimedToday ? '✓ CHECK-IN REALIZADO HOJE' : 'REGISTRAR CARGA (+ R$ 3,50)'}
+              {checkInClaimedToday ? '✓ CHECK-IN REALIZADO HOJE' : 'REGISTRAR CARGA (+ R$ 0,50)'}
             </button>
           </div>
 

@@ -594,7 +594,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const claimCheckIn = () => {
     if (checkInClaimedToday) return;
 
-    const checkInReward = 3.50;
+    const checkInReward = 0.50;
     setBalance(prev => prev + checkInReward);
     setCheckInClaimedToday(true);
 

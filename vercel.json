@@ -12,13 +12,13 @@
       "permanent": false
     },
     {
-      "source": "/financeiro",
-      "destination": "/?page=financeiro",
+      "source": "/pendentes",
+      "destination": "/?page=pendentes",
       "permanent": false
     },
     {
-      "source": "/financeiro/",
-      "destination": "/?page=financeiro",
+      "source": "/pendentes/",
+      "destination": "/?page=pendentes",
       "permanent": false
     }
   ],
@@ -28,7 +28,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/financeiro",
+      "source": "/pendentes",
       "destination": "/index.html"
     }
   ]

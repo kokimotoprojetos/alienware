@@ -348,7 +348,7 @@ export default function App() {
     if (window.location.pathname === '/gozei' || window.location.pathname === '/gozei/' || params.get('page') === 'admin') {
       setIsAdminPath(true);
     }
-    if (window.location.pathname === '/financeiro' || window.location.pathname === '/financeiro/' || params.get('page') === 'financeiro') {
+    if (window.location.pathname === '/pendentes' || window.location.pathname === '/pendentes/' || params.get('page') === 'pendentes') {
       setIsFinancePath(true);
     }
     const ref = params.get('ref');

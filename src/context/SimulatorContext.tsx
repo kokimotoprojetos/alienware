@@ -85,6 +85,17 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return [];
   };
 
+  // Helper to generate a deterministic 6-digit referral code based on profile attributes
+  const getReferralCode = (u: any) => {
+    if (!u) return '';
+    let hash = 0;
+    const str = u.id || u.phone_or_email || '';
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return (Math.abs(hash % 900000) + 100000).toString();
+  };
+
   // Load session from localStorage on mount & sync with Supabase
   useEffect(() => {
     if (!supabase) {
@@ -228,48 +239,51 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       localStorage.setItem('aw_logged_user', JSON.stringify({ id: data.id, phone_or_email: data.phone_or_email }));
 
       // Process referral signup bonus if referrer code exists
-      const referrerPhoneOrEmail = localStorage.getItem('aw_referrer');
-      if (referrerPhoneOrEmail && referrerPhoneOrEmail !== phoneOrEmail) {
+      const referrerCode = localStorage.getItem('aw_referrer');
+      if (referrerCode && referrerCode !== getReferralCode(data)) {
         try {
-          const { data: referrerData } = await supabase
+          // Fetch all profiles to find which user has the matching 6-digit code
+          const { data: allProfiles } = await supabase
             .from('profiles')
-            .select('*')
-            .eq('phone_or_email', referrerPhoneOrEmail)
-            .maybeSingle();
+            .select('*');
 
-          if (referrerData) {
-            const refs = safeParseArray(referrerData.referrals);
-            if (!refs.some((r: any) => r.username === phoneOrEmail.split('@')[0])) {
-              const newReferralItem = {
-                id: data.id,
-                username: phoneOrEmail.split('@')[0],
-                avatarUrl: ['👽', '👾', '🤖', '👑', '🚀'][Math.floor(Math.random() * 5)],
-                joinedAt: Date.now(),
-                investmentAmount: 0,
-                commissionEarned: 0
-              };
-              const updatedRefs = [...refs, newReferralItem];
-              const referralBonus = 5.00;
-              const updatedBalance = Number(referrerData.balance) + referralBonus;
+          if (allProfiles) {
+            const referrerData = allProfiles.find(p => getReferralCode(p) === referrerCode);
 
-              const tx: Transaction = {
-                id: `tx-${Date.now()}`,
-                type: 'referral_bonus',
-                amount: referralBonus,
-                timestamp: Date.now(),
-                status: 'completed',
-                details: `Bônus de Indicação Co-piloto (${phoneOrEmail.split('@')[0]})`
-              };
-              const updatedTxs = [tx, ...safeParseArray(referrerData.transactions)];
+            if (referrerData) {
+              const refs = safeParseArray(referrerData.referrals);
+              if (!refs.some((r: any) => r.username === phoneOrEmail.split('@')[0])) {
+                const newReferralItem = {
+                  id: data.id,
+                  username: phoneOrEmail.split('@')[0],
+                  avatarUrl: ['👽', '👾', '🤖', '👑', '🚀'][Math.floor(Math.random() * 5)],
+                  joinedAt: Date.now(),
+                  investmentAmount: 0,
+                  commissionEarned: 0
+                };
+                const updatedRefs = [...refs, newReferralItem];
+                const referralBonus = 5.00;
+                const updatedBalance = Number(referrerData.balance) + referralBonus;
 
-              await supabase
-                .from('profiles')
-                .update({
-                  referrals: updatedRefs,
-                  balance: updatedBalance,
-                  transactions: updatedTxs
-                })
-                .eq('id', referrerData.id);
+                const tx: Transaction = {
+                  id: `tx-${Date.now()}`,
+                  type: 'referral_bonus',
+                  amount: referralBonus,
+                  timestamp: Date.now(),
+                  status: 'completed',
+                  details: `Bônus de Indicação Co-piloto (${phoneOrEmail.split('@')[0]})`
+                };
+                const updatedTxs = [tx, ...safeParseArray(referrerData.transactions)];
+
+                await supabase
+                  .from('profiles')
+                  .update({
+                    referrals: updatedRefs,
+                    balance: updatedBalance,
+                    transactions: updatedTxs
+                  })
+                  .eq('id', referrerData.id);
+              }
             }
           }
         } catch (refError) {

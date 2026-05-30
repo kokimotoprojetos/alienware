@@ -26,8 +26,19 @@ export default function Referrals() {
   const activeInvestors = referrals.filter(r => r.investmentAmount > 0).length;
   const totalCommissions = referrals.reduce((acc, curr) => acc + Number(curr.commissionEarned), 0);
 
+  // Helper to generate a deterministic 6-digit referral code
+  const getReferralCode = (u: any) => {
+    if (!u) return '';
+    let hash = 0;
+    const str = u.id || u.phone_or_email || '';
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return (Math.abs(hash % 900000) + 100000).toString();
+  };
+
   // Real promotion link
-  const promoLink = `${window.location.origin}/?ref=${encodeURIComponent(user?.phone_or_email || '')}`;
+  const promoLink = `${window.location.origin}/?ref=${getReferralCode(user)}`;
 
   const copyPromoLink = () => {
     navigator.clipboard.writeText(promoLink);
@@ -113,7 +124,7 @@ export default function Referrals() {
           </div>
 
           <div className="space-y-2">
-            <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest block">Seu Link Multipass de Indicação</span>
+            <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest block">Seu Link Multipass de Indicação (Código: {getReferralCode(user)})</span>
             <div className="flex bg-slate-950 border border-slate-850 p-3 rounded-xl justify-between items-center gap-2">
               <span className="text-2xs font-mono text-cyan-400 truncate text-left">{promoLink}</span>
               <button

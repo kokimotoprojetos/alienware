@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     console.log('[LytronPay Webhook] Recebido evento do gateway:', JSON.stringify(payload, null, 2));
 
     const signature = req.headers['x-signature'] || req.headers['x-gateway-signature'];
-    const secretHash = process.env.LYTRONPAY_SECRET_HASH || '';
+    const secretHash = process.env.LYTRONPAY_WEBHOOK_SECRET || process.env.LYTRONPAY_SECRET_HASH || '';
 
     // Validate webhook signature if signature header and secret are configured
     if (signature && secretHash) {

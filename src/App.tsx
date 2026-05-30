@@ -34,11 +34,6 @@ function AppContent() {
   
   const { balance, balanceInvested, userRigs, user, logout } = useSimulator();
 
-  // Redirect to AuthPage if user session not active
-  if (!user) {
-    return <AuthPage />;
-  }
-
   // Tick local real-world clock for futuristic dashboard feeling
   useEffect(() => {
     const updateTime = () => {
@@ -49,6 +44,11 @@ function AppContent() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Redirect to AuthPage if user session not active
+  if (!user) {
+    return <AuthPage />;
+  }
 
   return (
     <div className="min-h-screen bg-[#060608] text-slate-100 flex flex-col font-sans relative overflow-x-hidden antialiased selection:bg-[#18FF6D] selection:text-slate-950">

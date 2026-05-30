@@ -226,6 +226,57 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setCheckInClaimedToday(false);
       
       localStorage.setItem('aw_logged_user', JSON.stringify({ id: data.id, phone_or_email: data.phone_or_email }));
+
+      // Process referral signup bonus if referrer code exists
+      const referrerPhoneOrEmail = localStorage.getItem('aw_referrer');
+      if (referrerPhoneOrEmail && referrerPhoneOrEmail !== phoneOrEmail) {
+        try {
+          const { data: referrerData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('phone_or_email', referrerPhoneOrEmail)
+            .maybeSingle();
+
+          if (referrerData) {
+            const refs = safeParseArray(referrerData.referrals);
+            if (!refs.some((r: any) => r.username === phoneOrEmail.split('@')[0])) {
+              const newReferralItem = {
+                id: data.id,
+                username: phoneOrEmail.split('@')[0],
+                avatarUrl: ['👽', '👾', '🤖', '👑', '🚀'][Math.floor(Math.random() * 5)],
+                joinedAt: Date.now(),
+                investmentAmount: 0,
+                commissionEarned: 0
+              };
+              const updatedRefs = [...refs, newReferralItem];
+              const referralBonus = 5.00;
+              const updatedBalance = Number(referrerData.balance) + referralBonus;
+
+              const tx: Transaction = {
+                id: `tx-${Date.now()}`,
+                type: 'referral_bonus',
+                amount: referralBonus,
+                timestamp: Date.now(),
+                status: 'completed',
+                details: `Bônus de Indicação Co-piloto (${phoneOrEmail.split('@')[0]})`
+              };
+              const updatedTxs = [tx, ...safeParseArray(referrerData.transactions)];
+
+              await supabase
+                .from('profiles')
+                .update({
+                  referrals: updatedRefs,
+                  balance: updatedBalance,
+                  transactions: updatedTxs
+                })
+                .eq('id', referrerData.id);
+            }
+          }
+        } catch (refError) {
+          console.error('[Supabase Referral Signup] Failed to record signup bonus:', refError);
+        }
+      }
+
       return true;
     } catch (e) {
       console.error(e);
@@ -309,6 +360,65 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       details: `Ativado Nó ${product.name} (${product.codename})`
     };
     setTransactions(prev => [tx, ...prev]);
+
+    // Pay level-1 commission to referrer if one exists in the database
+    if (supabase && user) {
+      (async () => {
+        try {
+          const { data: allProfiles } = await supabase
+            .from('profiles')
+            .select('id, referrals, balance, transactions');
+
+          if (allProfiles) {
+            const referrer = allProfiles.find(p => {
+              const refs = safeParseArray(p.referrals);
+              return refs.some(r => r.id === user.id);
+            });
+
+            if (referrer) {
+              const refs = safeParseArray(referrer.referrals);
+              const updatedRefs = refs.map(r => {
+                if (r.id === user.id) {
+                  const updatedInvest = Number(r.investmentAmount) + product.cost;
+                  const commission = product.cost * COMMISSIONS.level1;
+                  const updatedComm = Number(r.commissionEarned) + commission;
+                  return {
+                    ...r,
+                    investmentAmount: updatedInvest,
+                    commissionEarned: updatedComm
+                  };
+                }
+                return r;
+              });
+
+              const commissionAmount = product.cost * COMMISSIONS.level1;
+              const referrerNewBalance = Number(referrer.balance) + commissionAmount;
+
+              const commissionTx: Transaction = {
+                id: `tx-${Date.now()}`,
+                type: 'referral_bonus',
+                amount: commissionAmount,
+                timestamp: Date.now(),
+                status: 'completed',
+                details: `Comissão Nível 1: Compra de ${product.name} por Co-piloto`
+              };
+              const referrerNewTxs = [commissionTx, ...safeParseArray(referrer.transactions)];
+
+              await supabase
+                .from('profiles')
+                .update({
+                  referrals: updatedRefs,
+                  balance: referrerNewBalance,
+                  transactions: referrerNewTxs
+                })
+                .eq('id', referrer.id);
+            }
+          }
+        } catch (refError) {
+          console.error('[Supabase Referral Purchase] Commission payment failed:', refError);
+        }
+      })();
+    }
 
     return true;
   };

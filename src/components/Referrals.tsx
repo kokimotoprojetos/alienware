@@ -18,16 +18,16 @@ import {
 } from 'lucide-react';
 
 export default function Referrals() {
-  const { referrals, addMockReferral } = useSimulator();
+  const { referrals, addMockReferral, user } = useSimulator();
   const [isCopied, setIsCopied] = useState(false);
 
   // Calculate pilot network statistics
   const totalPilots = referrals.length;
   const activeInvestors = referrals.filter(r => r.investmentAmount > 0).length;
-  const totalCommissions = referrals.reduce((acc, curr) => acc + curr.commissionEarned, 0);
+  const totalCommissions = referrals.reduce((acc, curr) => acc + Number(curr.commissionEarned), 0);
 
   // Real promotion link
-  const promoLink = `https://www.alienwarecapital.space/register?ref=AW_${Math.floor(Math.random() * 8000 + 1000)}`;
+  const promoLink = `${window.location.origin}/?ref=${encodeURIComponent(user?.phone_or_email || '')}`;
 
   const copyPromoLink = () => {
     navigator.clipboard.writeText(promoLink);

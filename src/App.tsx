@@ -343,6 +343,11 @@ export default function App() {
     if (window.location.pathname === '/gozei') {
       setIsAdminPath(true);
     }
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      localStorage.setItem('aw_referrer', ref);
+    }
   }, []);
 
   if (isAdminPath) {

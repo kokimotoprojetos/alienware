@@ -157,7 +157,7 @@ export default async function handler(req, res) {
           amount: Number(amount),
           timestamp: Date.now(),
           status: 'pending',
-          details: 'Aguardando pagamento do PIX LytronPay'
+          details: 'Aguardando pagamento do PIX'
         };
 
         await supabase

@@ -519,7 +519,10 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Deposit funds (real PIX callbacks update balance via this call)
   const depositFunds = (amount: number) => {
-    setBalance(prev => prev + amount);
+    const hasCompletedDeposit = transactions.some(t => t.type === 'deposit' && t.status === 'completed');
+    const bonus = !hasCompletedDeposit ? 5.00 : 0;
+
+    setBalance(prev => prev + amount + bonus);
 
     const tx: Transaction = {
       id: `tx-${Date.now()}`,
@@ -527,9 +530,22 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       amount: amount,
       timestamp: Date.now(),
       status: 'completed',
-      details: 'Depósito PIX Recarregado Via Matriz Alienware'
+      details: 'Depósito PIX Recarregado'
     };
-    setTransactions(prev => [tx, ...prev]);
+
+    if (bonus > 0) {
+      const bonusTx: Transaction = {
+        id: `tx-bonus-${Date.now()}`,
+        type: 'referral_bonus',
+        amount: bonus,
+        timestamp: Date.now() + 10,
+        status: 'completed',
+        details: 'Bônus de Primeiro Depósito!'
+      };
+      setTransactions(prev => [bonusTx, tx, ...prev]);
+    } else {
+      setTransactions(prev => [tx, ...prev]);
+    }
   };
 
   // Withdraw funds via backend integration with Lytron Pay

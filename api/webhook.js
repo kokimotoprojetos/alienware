@@ -98,19 +98,38 @@ export default async function handler(req, res) {
       }
 
       const depositAmount = Number(amount || existingTx.amount);
-      const updatedBalance = Number(profile.balance) + depositAmount;
+      
+      // Determine if this is the first completed deposit
+      const hasCompletedDeposit = transactionsList.some(t => t.type === 'deposit' && t.status === 'completed');
+      const bonus = !hasCompletedDeposit ? 5.00 : 0;
+      
+      const updatedBalance = Number(profile.balance) + depositAmount + bonus;
 
       // Update transaction status to completed
-      const updatedTxs = transactionsList.map(t => {
+      let updatedTxs = transactionsList.map(t => {
         if (t.id === `tx-gate-${txid}`) {
           return {
             ...t,
             status: 'completed',
-            details: 'Depósito PIX confirmado via Webhook LytronPay'
+            details: 'Depósito PIX Confirmado'
           };
         }
         return t;
       });
+
+      if (bonus > 0) {
+        updatedTxs = [
+          {
+            id: `tx-bonus-${Date.now()}`,
+            type: 'referral_bonus',
+            amount: bonus,
+            timestamp: Date.now(),
+            status: 'completed',
+            details: 'Bônus de Primeiro Depósito!'
+          },
+          ...updatedTxs
+        ];
+      }
 
       // Persist balance and transactions update
       const { error: updateError } = await supabase
@@ -126,7 +145,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ success: false, message: 'Erro ao atualizar saldo.' });
       }
 
-      console.log(`[LytronPay Webhook] Saldo do usuário ${profile.phone_or_email} atualizado com sucesso. R$ ${depositAmount} creditados.`);
+      console.log(`[LytronPay Webhook] Saldo do usuário ${profile.phone_or_email} atualizado com sucesso. R$ ${depositAmount} creditados. Bônus de primeiro depósito: R$ ${bonus}.`);
     }
 
     return res.status(200).json({ success: true, message: 'Webhook processado com sucesso.' });

@@ -565,12 +565,12 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setBalance(prev => prev - amount);
 
       const tx: Transaction = {
-        id: `tx-${Date.now()}`,
+        id: `tx-withdraw-${Date.now()}`,
         type: 'withdraw',
         amount: amount,
         timestamp: Date.now(),
-        status: 'completed',
-        details: `Saque PIX enviado para Chave: ${pixKey}`
+        status: 'pending',
+        details: `Saque solicitado para Chave Pix: ${pixKey} (Aguardando Aprovação)`
       };
       setTransactions(prev => [tx, ...prev]);
 

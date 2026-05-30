@@ -166,6 +166,66 @@ export default function AdminPanel() {
     }
   };
 
+  const handleApproveWithdraw = async (userId: string, txId: string) => {
+    const token = adminToken || sessionStorage.getItem('admin_token');
+    if (!token) return;
+
+    if (!confirm('Deseja realmente APROVAR e marcar este saque como pago?')) return;
+
+    setActionLoading(txId);
+    try {
+      const response = await fetch('/api/admin-approve-withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId, txId })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Erro ao aprovar saque.');
+      }
+      alert('Saque aprovado com sucesso!');
+      fetchProfiles(token);
+    } catch (e: any) {
+      console.error(e);
+      alert('Erro: ' + e.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejectWithdraw = async (userId: string, txId: string) => {
+    const token = adminToken || sessionStorage.getItem('admin_token');
+    if (!token) return;
+
+    if (!confirm('Deseja realmente RECUSAR este saque? O saldo do usuário será devolvido.')) return;
+
+    setActionLoading(txId);
+    try {
+      const response = await fetch('/api/admin-reject-withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId, txId })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Erro ao rejeitar saque.');
+      }
+      alert('Saque rejeitado e saldo reembolsado!');
+      fetchProfiles(token);
+    } catch (e: any) {
+      console.error(e);
+      alert('Erro: ' + e.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const formatRigsCount = (rigs: any) => {
     try {
       const parsed = typeof rigs === 'string' ? JSON.parse(rigs) : rigs;
@@ -240,6 +300,37 @@ export default function AdminPanel() {
     );
   }
 
+  // Find all pending withdrawals across all users
+  const pendingWithdrawals: {
+    userId: string;
+    phone_or_email: string;
+    txId: string;
+    amount: number;
+    details: string;
+    timestamp: number;
+  }[] = [];
+
+  profiles.forEach(profile => {
+    try {
+      const txs = typeof profile.transactions === 'string' ? JSON.parse(profile.transactions) : profile.transactions;
+      const parsedTxs = Array.isArray(txs) ? txs : [];
+      parsedTxs.forEach((tx: any) => {
+        if (tx.type === 'withdraw' && tx.status === 'pending') {
+          pendingWithdrawals.push({
+            userId: profile.id,
+            phone_or_email: profile.phone_or_email,
+            txId: tx.id,
+            amount: tx.amount,
+            details: tx.details,
+            timestamp: tx.timestamp
+          });
+        }
+      });
+    } catch (e) {
+      console.error('Failed to parse transactions for pending withdrawals check:', e);
+    }
+  });
+
   return (
     <div className="min-h-screen bg-[#060608] text-slate-100 font-sans p-4 md:p-6 relative selection:bg-[#18FF6D] selection:text-slate-950">
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(24,255,109,0.012)_1px,transparent_1px),linear-gradient(to_right,rgba(24,255,109,0.012)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
@@ -260,7 +351,7 @@ export default function AdminPanel() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchProfiles}
+              onClick={() => fetchProfiles()}
               disabled={isLoading}
               className="p-2 bg-slate-900 border border-slate-800 hover:border-[#18FF6D44] text-[#18FF6D] rounded-xl transition cursor-pointer flex items-center justify-center disabled:opacity-50"
             >
@@ -310,6 +401,64 @@ export default function AdminPanel() {
             </div>
           </div>
         </div>
+
+        {/* Pending Payout requests section */}
+        {pendingWithdrawals.length > 0 && (
+          <div className="bg-[#0c0c10]/80 border border-amber-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500 shadow-[0_0_10px_#f59e0b]" />
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-amber-450 uppercase flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                Solicitações de Saque Pendentes ({pendingWithdrawals.length})
+              </h4>
+              <p className="text-3xs text-slate-450 font-mono">APROVE OU RECUSE AS TRANSFERÊNCIAS DE CRÉDITO MANUALMENTE</p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full font-mono text-2xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-850 text-slate-500 text-left">
+                    <th className="pb-3 font-semibold uppercase">Investidor</th>
+                    <th className="pb-3 font-semibold uppercase">Valor Solicitado</th>
+                    <th className="pb-3 font-semibold uppercase">Detalhes da Chave</th>
+                    <th className="pb-3 font-semibold uppercase">Horário da Ordem</th>
+                    <th className="pb-3 font-semibold uppercase text-right">Decisão</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-850/60 text-slate-300">
+                  {pendingWithdrawals.map((withdraw) => (
+                    <tr key={withdraw.txId} className="hover:bg-slate-900/30 transition-all">
+                      <td className="py-4 font-semibold text-slate-200">{withdraw.phone_or_email}</td>
+                      <td className="py-4 font-bold text-rose-450">
+                        R$ {Number(withdraw.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-4 text-slate-400">{withdraw.details}</td>
+                      <td className="py-4 text-slate-500">
+                        {new Date(withdraw.timestamp).toLocaleDateString('pt-BR')} {new Date(withdraw.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                      </td>
+                      <td className="py-4 text-right space-x-2">
+                        <button
+                          onClick={() => handleApproveWithdraw(withdraw.userId, withdraw.txId)}
+                          disabled={actionLoading === withdraw.txId}
+                          className="px-2.5 py-1 bg-emerald-950/20 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 rounded transition font-mono text-3xs font-bold uppercase cursor-pointer disabled:opacity-50"
+                        >
+                          Aprovar
+                        </button>
+                        <button
+                          onClick={() => handleRejectWithdraw(withdraw.userId, withdraw.txId)}
+                          disabled={actionLoading === withdraw.txId}
+                          className="px-2.5 py-1 bg-rose-950/20 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500 text-rose-400 rounded transition font-mono text-3xs font-bold uppercase cursor-pointer disabled:opacity-50"
+                        >
+                          Recusar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Users Table / List */}
         <div className="bg-[#0c0c10]/80 border border-slate-850 rounded-2xl p-6 shadow-xl">

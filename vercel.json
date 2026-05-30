@@ -1,5 +1,17 @@
 {
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/gozei",
+      "destination": "/?page=admin",
+      "permanent": false
+    },
+    {
+      "source": "/gozei/",
+      "destination": "/?page=admin",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/gozei",

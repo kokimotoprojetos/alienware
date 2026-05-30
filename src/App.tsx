@@ -340,10 +340,10 @@ export default function App() {
   const [isAdminPath, setIsAdminPath] = useState<boolean>(false);
 
   useEffect(() => {
-    if (window.location.pathname === '/gozei') {
+    const params = new URLSearchParams(window.location.search);
+    if (window.location.pathname === '/gozei' || window.location.pathname === '/gozei/' || params.get('page') === 'admin') {
       setIsAdminPath(true);
     }
-    const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
     if (ref) {
       localStorage.setItem('aw_referrer', ref);

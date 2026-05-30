@@ -47,9 +47,9 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     codename: 'DESKTOP-MATRIX-30D',
     description: 'Supercomputador de gabinete de alto fluxo. Projetado para renderização pesada e mineração em pool dedicada por 30 dias.',
     tier: 'Supercluster',
-    cost: 200, // R$ 200,00
+    cost: 170, // R$ 170,00
     dailyYieldPercent: 15.0, // 15% ao dia
-    dailyYieldAmount: 30.00, // R$ 30.00/dia
+    dailyYieldAmount: 25.50, // R$ 25.50/dia
     efficiency: '98.9%',
     hashrate: '11.8 GH/s',
     powerConsumption: 1200, // 1.2kW

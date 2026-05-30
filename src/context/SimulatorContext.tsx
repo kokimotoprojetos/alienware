@@ -5,7 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { InvestmentProduct, UserRig, Transaction, ReferralPilot } from '../types';
-import { INITIAL_PRODUCTS, INITIAL_MISSIONS, COMMISSIONS, ReferralPilot as DataPilot } from '../data';
+import { INITIAL_PRODUCTS, INITIAL_MISSIONS, COMMISSIONS } from '../data';
 import { supabase } from '../lib/supabase';
 
 interface SimulatorContextType {

@@ -261,8 +261,10 @@ function AppContent() {
   );
 }
 
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
-  constructor(props: { children: React.ReactNode }) {
+class ErrorBoundary extends React.Component<any, any> {
+  state: any;
+  props: any;
+  constructor(props: any) {
     super(props);
     this.state = { hasError: false, error: null };
   }

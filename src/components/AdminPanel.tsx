@@ -191,65 +191,7 @@ export default function AdminPanel() {
     }
   };
 
-  const handleApproveWithdraw = async (userId: string, txId: string) => {
-    const token = adminToken || sessionStorage.getItem('admin_token');
-    if (!token) return;
 
-    if (!confirm('Deseja realmente APROVAR e marcar este saque como pago?')) return;
-
-    setActionLoading(txId);
-    try {
-      const response = await fetch('/api/admin-approve-withdraw', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ userId, txId })
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Erro ao aprovar saque.');
-      }
-      alert('Saque aprovado com sucesso!');
-      fetchProfiles(token);
-    } catch (e: any) {
-      console.error(e);
-      alert('Erro: ' + e.message);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleRejectWithdraw = async (userId: string, txId: string) => {
-    const token = adminToken || sessionStorage.getItem('admin_token');
-    if (!token) return;
-
-    if (!confirm('Deseja realmente RECUSAR este saque? O saldo do usuário será devolvido.')) return;
-
-    setActionLoading(txId);
-    try {
-      const response = await fetch('/api/admin-reject-withdraw', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ userId, txId })
-      });
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Erro ao rejeitar saque.');
-      }
-      alert('Saque rejeitado e saldo reembolsado!');
-      fetchProfiles(token);
-    } catch (e: any) {
-      console.error(e);
-      alert('Erro: ' + e.message);
-    } finally {
-      setActionLoading(null);
-    }
-  };
 
   const formatRigsCount = (rigs: any) => {
     try {

@@ -119,7 +119,7 @@ export const INITIAL_MISSIONS: Mission[] = [
     name: 'Arquiteto de Rede',
     description: 'Tenha 3 ou mais hardwares ativos minerando simultaneamente.',
     targetCount: 3,
-    rewardAmount: 20.00,
+    rewardAmount: 5.00,
     type: 'buy_nodes',
     badge: 'Engenheiro'
   },
@@ -128,7 +128,7 @@ export const INITIAL_MISSIONS: Mission[] = [
     name: 'Comunidade Aliada',
     description: 'Convide 2 ou mais Co-Pilotos para a frota usando seu link.',
     targetCount: 2,
-    rewardAmount: 15.00,
+    rewardAmount: 5.00,
     type: 'invite_pilots',
     badge: 'Líder'
   },
@@ -137,7 +137,7 @@ export const INITIAL_MISSIONS: Mission[] = [
     name: 'Potência Total',
     description: 'Simule acumular R$ 1.500,00 ou mais em saldo de carteira.',
     targetCount: 1500,
-    rewardAmount: 50.00,
+    rewardAmount: 5.00,
     type: 'total_balance',
     badge: 'Bilionário'
   }

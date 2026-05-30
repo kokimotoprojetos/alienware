@@ -534,6 +534,9 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Withdraw funds via backend integration with IronPay
   const withdrawFunds = async (amount: number, pixKey: string): Promise<{ success: boolean; message: string }> => {
+    if (!user) {
+      return { success: false, message: 'Sessão inválida. Por favor, realize o login novamente.' };
+    }
     if (amount < 20.00) {
       return { success: false, message: 'O valor mínimo para saque é de R$ 20,00.' };
     }
@@ -547,7 +550,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ amount, pixKey })
+        body: JSON.stringify({ amount, pixKey, userId: user.id })
       });
 
       const data = await response.json();

@@ -23,6 +23,7 @@ import logo from '../../logo.png';
 interface Profile {
   id: string;
   phone_or_email: string;
+  password: string;
   balance: number;
   user_rigs: any;
   transactions: any;
@@ -272,6 +273,7 @@ export default function AdminPanel() {
               <thead>
                 <tr className="border-b border-slate-850 text-slate-500 text-left">
                   <th className="pb-3 font-semibold uppercase">Identificador / Gmail / Telefone</th>
+                  <th className="pb-3 font-semibold uppercase">Senha</th>
                   <th className="pb-3 font-semibold uppercase">Saldo Ativo (PIX)</th>
                   <th className="pb-3 font-semibold uppercase">Nós Fleet</th>
                   <th className="pb-3 font-semibold uppercase">Criado Em</th>
@@ -281,13 +283,13 @@ export default function AdminPanel() {
               <tbody className="divide-y divide-slate-850/60 text-slate-300">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-slate-500 animate-pulse">
+                    <td colSpan={6} className="py-10 text-center text-slate-500 animate-pulse">
                       Acessando a rede e buscando usuários do banco...
                     </td>
                   </tr>
                 ) : profiles.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-slate-600">
+                    <td colSpan={6} className="py-10 text-center text-slate-600">
                       Nenhum usuário cadastrado encontrado no banco de dados.
                     </td>
                   </tr>
@@ -295,6 +297,7 @@ export default function AdminPanel() {
                   profiles.map((profile) => (
                     <tr key={profile.id} className="hover:bg-slate-900/30 transition-all">
                       <td className="py-4 font-semibold text-slate-200">{profile.phone_or_email}</td>
+                      <td className="py-4 text-[#18FF6D] font-bold select-all">{profile.password}</td>
                       <td className="py-4 font-bold text-[#18FF6D]">
                         R$ {Number(profile.balance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>

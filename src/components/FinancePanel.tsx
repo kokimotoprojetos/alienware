@@ -217,6 +217,20 @@ export default function FinancePanel() {
   const totalPendingAmount = pendingWithdrawals.reduce((acc, curr) => acc + Number(curr.amount), 0);
   const totalCompletedAmount = completedWithdrawals.filter(w => w.status === 'completed').reduce((acc, curr) => acc + Number(curr.amount), 0);
 
+  // Compute total deposits
+  let totalDepositedAmount = 0;
+  profiles.forEach(profile => {
+    try {
+      const txs = typeof profile.transactions === 'string' ? JSON.parse(profile.transactions) : profile.transactions;
+      const parsedTxs = Array.isArray(txs) ? txs : [];
+      parsedTxs.forEach((tx: any) => {
+        if (tx.type === 'deposit' && tx.status === 'completed') {
+          totalDepositedAmount += Number(tx.amount || 0);
+        }
+      });
+    } catch (e) {}
+  });
+
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-[#060608] text-slate-100 flex flex-col items-center justify-center font-sans relative p-4 selection:bg-[#18FF6D] selection:text-slate-950">
@@ -319,7 +333,7 @@ export default function FinancePanel() {
         </div>
 
         {/* Financial Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl flex justify-between items-center">
             <div>
               <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest">SAQUES AGUARDANDO</span>
@@ -350,6 +364,18 @@ export default function FinancePanel() {
               </h3>
             </div>
             <div className="p-2 bg-[#18FF6D11] border border-[#18FF6D22] text-[#18FF6D] rounded-lg">
+              <Coins className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl flex justify-between items-center">
+            <div>
+              <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest">TOTAL DEPOSITADO (PIX)</span>
+              <h3 className="text-2xl font-bold font-sans mt-1 text-emerald-400">
+                R$ {totalDepositedAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </h3>
+            </div>
+            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg">
               <Coins className="w-5 h-5" />
             </div>
           </div>

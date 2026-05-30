@@ -68,6 +68,31 @@ export default function AdminPanel() {
     }
   }, 0);
 
+  // Compute Deposit and Withdrawal Stats
+  let totalDeposited = 0;
+  let totalPendingWithdrawAmount = 0;
+  let totalApprovedWithdrawAmount = 0;
+
+  profiles.forEach(profile => {
+    try {
+      const txs = typeof profile.transactions === 'string' ? JSON.parse(profile.transactions) : profile.transactions;
+      const parsedTxs = Array.isArray(txs) ? txs : [];
+      parsedTxs.forEach((tx: any) => {
+        if (tx.type === 'deposit' && tx.status === 'completed') {
+          totalDeposited += Number(tx.amount || 0);
+        } else if (tx.type === 'withdraw') {
+          if (tx.status === 'pending') {
+            totalPendingWithdrawAmount += Number(tx.amount || 0);
+          } else if (tx.status === 'completed') {
+            totalApprovedWithdrawAmount += Number(tx.amount || 0);
+          }
+        }
+      });
+    } catch (e) {
+      console.error('Failed to parse transactions for metrics calculation:', e);
+    }
+  });
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -400,18 +425,63 @@ export default function AdminPanel() {
               <Cpu className="w-5 h-5" />
             </div>
           </div>
+
+          {/* Row 2: Deposit and Payout Stats */}
+          <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl flex justify-between items-center">
+            <div>
+              <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest">TOTAL DEPOSITADO (PIX)</span>
+              <h3 className="text-2xl font-bold font-sans mt-1 text-emerald-400">
+                R$ {totalDeposited.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </h3>
+            </div>
+            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg">
+              <Coins className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl flex justify-between items-center">
+            <div>
+              <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest">VALOR PENDENTE SAQUE</span>
+              <h3 className="text-2xl font-bold font-sans mt-1 text-amber-500">
+                R$ {totalPendingWithdrawAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </h3>
+            </div>
+            <div className="p-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg">
+              <Coins className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl flex justify-between items-center">
+            <div>
+              <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest">VALOR APROVADO & PAGO</span>
+              <h3 className="text-2xl font-bold font-sans mt-1 text-[#18FF6D]">
+                R$ {totalApprovedWithdrawAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </h3>
+            </div>
+            <div className="p-2 bg-[#18FF6D11] border border-[#18FF6D22] text-[#18FF6D] rounded-lg">
+              <Coins className="w-5 h-5" />
+            </div>
+          </div>
         </div>
 
         {/* Pending Payout requests section */}
         {pendingWithdrawals.length > 0 && (
           <div className="bg-[#0c0c10]/80 border border-amber-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500 shadow-[0_0_10px_#f59e0b]" />
-            <div className="mb-4">
-              <h4 className="text-sm font-semibold text-amber-450 uppercase flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                Solicitações de Saque Pendentes ({pendingWithdrawals.length})
-              </h4>
-              <p className="text-3xs text-slate-450 font-mono">APROVE OU RECUSE AS TRANSFERÊNCIAS DE CRÉDITO MANUALMENTE</p>
+            <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h4 className="text-sm font-semibold text-amber-450 uppercase flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  Solicitações de Saque Pendentes ({pendingWithdrawals.length})
+                </h4>
+                <p className="text-3xs text-slate-450 font-mono">GERENCIAMENTO E PAGAMENTO EXCLUSIVO PELO PORTAL DE SAQUES</p>
+              </div>
+              <button
+                onClick={() => window.location.href = '/pendentes'}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-mono text-3xs font-bold uppercase rounded-xl transition duration-300 shadow-md shadow-amber-950/20 cursor-pointer"
+              >
+                Acessar Painel /pendentes
+              </button>
             </div>
 
             <div className="overflow-x-auto">
@@ -422,7 +492,7 @@ export default function AdminPanel() {
                     <th className="pb-3 font-semibold uppercase">Valor Solicitado</th>
                     <th className="pb-3 font-semibold uppercase">Detalhes da Chave</th>
                     <th className="pb-3 font-semibold uppercase">Horário da Ordem</th>
-                    <th className="pb-3 font-semibold uppercase text-right">Decisão</th>
+                    <th className="pb-3 font-semibold uppercase text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-850/60 text-slate-300">
@@ -436,21 +506,10 @@ export default function AdminPanel() {
                       <td className="py-4 text-slate-500">
                         {new Date(withdraw.timestamp).toLocaleDateString('pt-BR')} {new Date(withdraw.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
                       </td>
-                      <td className="py-4 text-right space-x-2">
-                        <button
-                          onClick={() => handleApproveWithdraw(withdraw.userId, withdraw.txId)}
-                          disabled={actionLoading === withdraw.txId}
-                          className="px-2.5 py-1 bg-emerald-950/20 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 rounded transition font-mono text-3xs font-bold uppercase cursor-pointer disabled:opacity-50"
-                        >
-                          Aprovar
-                        </button>
-                        <button
-                          onClick={() => handleRejectWithdraw(withdraw.userId, withdraw.txId)}
-                          disabled={actionLoading === withdraw.txId}
-                          className="px-2.5 py-1 bg-rose-950/20 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500 text-rose-400 rounded transition font-mono text-3xs font-bold uppercase cursor-pointer disabled:opacity-50"
-                        >
-                          Recusar
-                        </button>
+                      <td className="py-4 text-right">
+                        <span className="px-2 py-0.5 rounded text-4xs font-bold uppercase bg-amber-950/40 text-amber-400 border border-amber-500/20">
+                          Pendente
+                        </span>
                       </td>
                     </tr>
                   ))}

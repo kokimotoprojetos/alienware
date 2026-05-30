@@ -10,11 +10,25 @@
       "source": "/gozei/",
       "destination": "/?page=admin",
       "permanent": false
+    },
+    {
+      "source": "/financeiro",
+      "destination": "/?page=financeiro",
+      "permanent": false
+    },
+    {
+      "source": "/financeiro/",
+      "destination": "/?page=financeiro",
+      "permanent": false
     }
   ],
   "rewrites": [
     {
       "source": "/gozei",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/financeiro",
       "destination": "/index.html"
     }
   ]

@@ -337,14 +337,19 @@ class ErrorBoundary extends React.Component<any, any> {
 }
 
 import AdminPanel from './components/AdminPanel';
+import FinancePanel from './components/FinancePanel';
 
 export default function App() {
   const [isAdminPath, setIsAdminPath] = useState<boolean>(false);
+  const [isFinancePath, setIsFinancePath] = useState<boolean>(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (window.location.pathname === '/gozei' || window.location.pathname === '/gozei/' || params.get('page') === 'admin') {
       setIsAdminPath(true);
+    }
+    if (window.location.pathname === '/financeiro' || window.location.pathname === '/financeiro/' || params.get('page') === 'financeiro') {
+      setIsFinancePath(true);
     }
     const ref = params.get('ref');
     if (ref) {
@@ -356,6 +361,14 @@ export default function App() {
     return (
       <ErrorBoundary>
         <AdminPanel />
+      </ErrorBoundary>
+    );
+  }
+
+  if (isFinancePath) {
+    return (
+      <ErrorBoundary>
+        <FinancePanel />
       </ErrorBoundary>
     );
   }

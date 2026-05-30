@@ -532,7 +532,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTransactions(prev => [tx, ...prev]);
   };
 
-  // Withdraw funds via backend integration with IronPay
+  // Withdraw funds via backend integration with Lytron Pay
   const withdrawFunds = async (amount: number, pixKey: string): Promise<{ success: boolean; message: string }> => {
     if (!user) {
       return { success: false, message: 'Sessão inválida. Por favor, realize o login novamente.' };

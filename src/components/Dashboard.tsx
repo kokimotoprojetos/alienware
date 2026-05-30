@@ -295,7 +295,7 @@ export default function Dashboard() {
               <div className="space-y-2.5 font-mono text-2xs">
                 <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
                   <span className="text-slate-500">GATEWAY DE PAGAMENTO</span>
-                  <span className="text-cyan-400 font-bold">IRONPAY SECURE API</span>
+                  <span className="text-[#18FF6D] font-bold">LYTRON PAY API</span>
                 </div>
                 <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
                   <span className="text-slate-500">CRIPTOGRAFIA LEDGER</span>

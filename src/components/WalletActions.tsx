@@ -100,7 +100,7 @@ export default function WalletActions() {
       });
       const data = await response.json();
       if (data.success) {
-        // Real checkout transaction returned by IronPay has transaction details inside transaction.data or transaction
+        // Real checkout transaction returned by Lytron Pay has transaction details inside transaction.data or transaction
         // Let's fallback safely depending on payload mapping
         const tx = data.transaction;
         const code = (tx.pix && tx.pix.pix_qr_code) || tx.pix_code || (tx.data ? (tx.data.pix && tx.data.pix.pix_qr_code) || tx.data.pix_code : '') || '';

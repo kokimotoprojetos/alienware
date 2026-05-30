@@ -77,9 +77,9 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     codename: 'PROTOTHREAD-120D',
     description: 'Arquitetura de cluster quântico modular de densidade extrema com refrigeração direta. Máximo retorno para mineração de 120 dias.',
     tier: 'Quantum',
-    cost: 5000, // R$ 5000,00
-    dailyYieldPercent: 6.5, // 6.5% ao dia
-    dailyYieldAmount: 325.00, // R$ 325.00/dia
+    cost: 500, // R$ 500,00
+    dailyYieldPercent: 15.0, // 15% ao dia
+    dailyYieldAmount: 75.00, // R$ 75.00/dia
     efficiency: '99.95%',
     hashrate: '68.5 GH/s',
     powerConsumption: 3600, // 3.6kW

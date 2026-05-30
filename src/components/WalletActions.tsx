@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function WalletActions() {
-  const { balance, depositFunds, withdrawFunds, transactions } = useSimulator();
+  const { balance, depositFunds, withdrawFunds, transactions, user } = useSimulator();
 
   // Selected tab 'deposit' | 'withdraw'
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit');
@@ -35,7 +35,7 @@ export default function WalletActions() {
 
   // Customer details for real deposit validation
   const [customerName, setCustomerName] = useState<string>('');
-  const [customerEmail, setCustomerEmail] = useState<string>('');
+  const [customerEmail, setCustomerEmail] = useState<string>(user?.phone_or_email || '');
   const [customerCpf, setCustomerCpf] = useState<string>('');
 
   // Withdraw fields
@@ -238,13 +238,13 @@ export default function WalletActions() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest block">E-mail</span>
+                      <span className="text-3xs font-mono text-slate-500 uppercase tracking-widest block">E-mail da Conta</span>
                       <input
                         type="email"
+                        readOnly
                         placeholder="seuemail@exemplo.com"
                         value={customerEmail}
-                        onChange={(e) => setCustomerEmail(e.target.value)}
-                        className="w-full bg-slate-955/80 border border-slate-800 rounded-xl p-3 text-slate-200 font-mono text-xs focus:outline-none focus:border-cyan-500"
+                        className="w-full bg-slate-950/80 border border-slate-900 rounded-xl p-3 text-slate-400 font-mono text-xs focus:outline-none cursor-not-allowed"
                       />
                     </div>
                     <div className="space-y-1.5">

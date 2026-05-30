@@ -71,6 +71,20 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const userRigsRef = useRef(userRigs);
   userRigsRef.current = userRigs;
 
+  // Helper to parse arrays safely even if they come back from Supabase as raw strings or null
+  const safeParseArray = (val: any) => {
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        console.error('[Supabase Safety] Failed to parse stringified JSON column:', e);
+      }
+    }
+    return [];
+  };
+
   // Load session from localStorage on mount & sync with Supabase
   useEffect(() => {
     const stored = localStorage.getItem('aw_logged_user');
@@ -87,10 +101,10 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               if (data && !error) {
                 setUser({ id: data.id, phone_or_email: data.phone_or_email });
                 setBalance(Number(data.balance));
-                setUserRigs(data.user_rigs || []);
-                setTransactions(data.transactions || []);
-                setReferrals(data.referrals || []);
-                setCompletedMissions(data.completed_missions || []);
+                setUserRigs(safeParseArray(data.user_rigs));
+                setTransactions(safeParseArray(data.transactions));
+                setReferrals(safeParseArray(data.referrals));
+                setCompletedMissions(safeParseArray(data.completed_missions));
                 setCheckInClaimedToday(data.checkin_claimed_today || false);
               } else {
                 logout();
@@ -145,10 +159,10 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       setUser({ id: data.id, phone_or_email: data.phone_or_email });
       setBalance(Number(data.balance));
-      setUserRigs(data.user_rigs || []);
-      setTransactions(data.transactions || []);
-      setReferrals(data.referrals || []);
-      setCompletedMissions(data.completed_missions || []);
+      setUserRigs(safeParseArray(data.user_rigs));
+      setTransactions(safeParseArray(data.transactions));
+      setReferrals(safeParseArray(data.referrals));
+      setCompletedMissions(safeParseArray(data.completed_missions));
       setCheckInClaimedToday(data.checkin_claimed_today || false);
       
       localStorage.setItem('aw_logged_user', JSON.stringify({ id: data.id, phone_or_email: data.phone_or_email }));

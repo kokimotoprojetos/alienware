@@ -62,9 +62,9 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     codename: 'SLIM-NODE-90D',
     description: 'Hardware super compacto com eficiência energética extrema. Ideal para mineração focada e durabilidade de 90 dias.',
     tier: 'Hypernode',
-    cost: 3000, // R$ 3000,00
-    dailyYieldPercent: 5.5, // 5.5% ao dia
-    dailyYieldAmount: 165.00, // R$ 165.00/dia
+    cost: 350, // R$ 350,00
+    dailyYieldPercent: 15.0, // 15% ao dia
+    dailyYieldAmount: 52.50, // R$ 52.50/dia
     efficiency: '99.4%',
     hashrate: '32.6 GH/s',
     powerConsumption: 2200, // 2.2kW

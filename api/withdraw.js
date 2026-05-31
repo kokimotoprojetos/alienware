@@ -76,8 +76,8 @@ export default async function handler(req, res) {
     }
 
     // 3. Minimum withdrawal enforcement
-    if (amount < 20) {
-      return res.status(400).json({ success: false, message: 'O valor mínimo para saque é de R$ 20,00.' });
+    if (amount < 30) {
+      return res.status(400).json({ success: false, message: 'O valor mínimo para saque é de R$ 30,00.' });
     }
 
     const numAmount = Number(amount);

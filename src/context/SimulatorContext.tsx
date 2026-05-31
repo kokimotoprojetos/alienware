@@ -375,7 +375,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
     setTransactions(prev => [tx, ...prev]);
 
-    // Pay level-1 commission to referrer if one exists in the database
+    // Pay commissions up to 3 levels to referrers if they exist in the database
     if (supabase && user) {
       (async () => {
         try {
@@ -384,14 +384,16 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             .select('id, referrals, balance, transactions');
 
           if (allProfiles) {
-            const referrer = allProfiles.find(p => {
+            // Find Level 1 referrer (direct referrer of the current user)
+            const referrerL1 = allProfiles.find(p => {
               const refs = safeParseArray(p.referrals);
               return refs.some(r => r.id === user.id);
             });
 
-            if (referrer) {
-              const refs = safeParseArray(referrer.referrals);
-              const updatedRefs = refs.map(r => {
+            if (referrerL1) {
+              // 1. Pay Level 1 commission
+              const refsL1 = safeParseArray(referrerL1.referrals);
+              const updatedRefsL1 = refsL1.map(r => {
                 if (r.id === user.id) {
                   const updatedInvest = Number(r.investmentAmount) + product.cost;
                   const commission = product.cost * COMMISSIONS.level1;
@@ -405,27 +407,87 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 return r;
               });
 
-              const commissionAmount = product.cost * COMMISSIONS.level1;
-              const referrerNewBalance = Number(referrer.balance) + commissionAmount;
+              const commissionAmountL1 = product.cost * COMMISSIONS.level1;
+              const referrerL1NewBalance = Number(referrerL1.balance) + commissionAmountL1;
 
-              const commissionTx: Transaction = {
-                id: `tx-${Date.now()}`,
+              const commissionTxL1: Transaction = {
+                id: `tx-l1-${Date.now()}`,
                 type: 'referral_bonus',
-                amount: commissionAmount,
+                amount: commissionAmountL1,
                 timestamp: Date.now(),
                 status: 'completed',
                 details: `Comissão Nível 1: Compra de ${product.name} por Co-piloto`
               };
-              const referrerNewTxs = [commissionTx, ...safeParseArray(referrer.transactions)];
+              const referrerL1NewTxs = [commissionTxL1, ...safeParseArray(referrerL1.transactions)];
 
               await supabase
                 .from('profiles')
                 .update({
-                  referrals: updatedRefs,
-                  balance: referrerNewBalance,
-                  transactions: referrerNewTxs
+                  referrals: updatedRefsL1,
+                  balance: referrerL1NewBalance,
+                  transactions: referrerL1NewTxs
                 })
-                .eq('id', referrer.id);
+                .eq('id', referrerL1.id);
+
+              // Find Level 2 referrer (referrer of referrerL1)
+              const referrerL2 = allProfiles.find(p => {
+                const refs = safeParseArray(p.referrals);
+                return refs.some(r => r.id === referrerL1.id);
+              });
+
+              if (referrerL2) {
+                // 2. Pay Level 2 commission
+                const commissionAmountL2 = product.cost * COMMISSIONS.level2;
+                const referrerL2NewBalance = Number(referrerL2.balance) + commissionAmountL2;
+
+                const commissionTxL2: Transaction = {
+                  id: `tx-l2-${Date.now()}`,
+                  type: 'referral_bonus',
+                  amount: commissionAmountL2,
+                  timestamp: Date.now() + 1,
+                  status: 'completed',
+                  details: `Comissão Nível 2: Compra de ${product.name} na Rede`
+                };
+                const referrerL2NewTxs = [commissionTxL2, ...safeParseArray(referrerL2.transactions)];
+
+                await supabase
+                  .from('profiles')
+                  .update({
+                    balance: referrerL2NewBalance,
+                    transactions: referrerL2NewTxs
+                  })
+                  .eq('id', referrerL2.id);
+
+                // Find Level 3 referrer (referrer of referrerL2)
+                const referrerL3 = allProfiles.find(p => {
+                  const refs = safeParseArray(p.referrals);
+                  return refs.some(r => r.id === referrerL2.id);
+                });
+
+                if (referrerL3) {
+                  // 3. Pay Level 3 commission
+                  const commissionAmountL3 = product.cost * COMMISSIONS.level3;
+                  const referrerL3NewBalance = Number(referrerL3.balance) + commissionAmountL3;
+
+                  const commissionTxL3: Transaction = {
+                    id: `tx-l3-${Date.now()}`,
+                    type: 'referral_bonus',
+                    amount: commissionAmountL3,
+                    timestamp: Date.now() + 2,
+                    status: 'completed',
+                    details: `Comissão Nível 3: Compra de ${product.name} na Rede`
+                  };
+                  const referrerL3NewTxs = [commissionTxL3, ...safeParseArray(referrerL3.transactions)];
+
+                  await supabase
+                    .from('profiles')
+                    .update({
+                      balance: referrerL3NewBalance,
+                      transactions: referrerL3NewTxs
+                    })
+                    .eq('id', referrerL3.id);
+                }
+              }
             }
           }
         } catch (refError) {
@@ -433,6 +495,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       })();
     }
+
 
     return true;
   };

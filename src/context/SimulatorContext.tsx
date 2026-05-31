@@ -647,13 +647,16 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // BUG FIX #7: only debit balance AFTER server confirms success
       setBalance(prev => prev - amount);
 
+      const fee = amount * 0.10;
+      const netAmount = amount - fee;
+
       const tx: Transaction = {
         id: `tx-withdraw-${Date.now()}`,
         type: 'withdraw',
         amount: amount,
         timestamp: Date.now(),
         status: 'pending',
-        details: `Saque solicitado para Chave Pix: ${pixKey} (Aguardando Aprovação)`
+        details: `Saque solicitado para Chave Pix: ${pixKey} (Líquido: R$ ${netAmount.toFixed(2)}, Taxa 10%: R$ ${fee.toFixed(2)})`
       };
       setTransactions(prev => [tx, ...prev]);
 

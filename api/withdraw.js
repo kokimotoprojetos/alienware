@@ -80,8 +80,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'O valor mínimo para saque é de R$ 20,00.' });
     }
 
+    const numAmount = Number(amount);
+    const fee = numAmount * 0.10;
+    const netAmount = numAmount - fee;
+
     // 4. Deduct balance and create PENDING transaction
-    const updatedBalance = currentBalance - amount;
+    const updatedBalance = currentBalance - numAmount;
 
     const safeParseArray = (val) => {
       if (Array.isArray(val)) return val;
@@ -100,10 +104,10 @@ export default async function handler(req, res) {
     const newTx = {
       id: `tx-withdraw-${Date.now()}`,
       type: 'withdraw',
-      amount: amount,
+      amount: numAmount,
       timestamp: Date.now(),
       status: 'pending',
-      details: `Saque solicitado para Chave Pix: ${pixKey} (Aguardando Aprovação)`
+      details: `Saque solicitado para Chave Pix: ${pixKey} (Líquido: R$ ${netAmount.toFixed(2)}, Taxa 10%: R$ ${fee.toFixed(2)})`
     };
     const updatedTxs = [newTx, ...txs];
 
@@ -121,7 +125,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: 'Solicitação de saque de R$ ' + Number(amount).toFixed(2) + ' enviada para análise do administrador com sucesso!'
+      message: 'Solicitação de saque de R$ ' + numAmount.toFixed(2) + ' (Líquido: R$ ' + netAmount.toFixed(2) + ' após taxa de 10%) enviada para análise do administrador com sucesso!'
     });
 
   } catch (error) {

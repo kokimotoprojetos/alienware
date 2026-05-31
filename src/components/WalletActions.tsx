@@ -414,7 +414,7 @@ export default function WalletActions() {
                     </div>
                     <div className="flex justify-between items-center text-4xs font-mono text-slate-500">
                       <span>SALDO DISPONÍVEL: R$ {balance.toFixed(2)}</span>
-                      <span>MÍNIMO DE SAQUE: R$ 20,00</span>
+                      <span>MÍNIMO: R$ 20,00 | TAXA: 10%</span>
                     </div>
                   </div>
 

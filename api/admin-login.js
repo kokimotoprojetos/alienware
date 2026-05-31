@@ -6,8 +6,11 @@ export default async function handler(req, res) {
   try {
     const { username, password } = req.body;
     
-    const adminUser = process.env.ADMIN_USERNAME || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'alienwareadmin2026';
+    const adminUser = process.env.ADMIN_USERNAME;
+    const adminPass = process.env.ADMIN_PASSWORD;
+    if (!adminUser || !adminPass) {
+      return res.status(500).json({ success: false, message: 'Configuração de admin ausente no servidor.' });
+    }
 
     if (username === adminUser && password === adminPass) {
       // Generate a simple token that expires or matches a server-side check

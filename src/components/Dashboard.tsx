@@ -41,10 +41,16 @@ export default function Dashboard() {
 
   const [resetConfirm, setResetConfirm] = useState(false);
 
-  // Compute stats
-  const totalHashrate = userRigs.reduce((acc, curr) => {
-    const isGiga = curr.dailyYieldPercent >= 4.0; 
-    return acc + (isGiga ? 2.4 : 0.45); // simplistic Giga count
+  // Compute stats — derive hashrate from rig product data
+  const HASHRATE_MAP: Record<string, number> = {
+    'aw-aurora-r16': 0.45,
+    'aw-m18-matrix': 2.4,
+    'aw-area51-thread': 11.8,
+    'aw-x14-slim': 32.6,
+    'aw-quantum-hive': 68.5,
+  };
+  const totalHashrate = userRigs.reduce((acc, rig) => {
+    return acc + (HASHRATE_MAP[rig.productId] || 0);
   }, 0);
 
   const estimatedDailyEarnings = userRigs.reduce((acc, curr) => acc + curr.dailyYieldAmount, 0);

@@ -49,13 +49,15 @@ export default function WalletActions() {
   React.useEffect(() => {
     if (depositStage !== 'qr_code' || !activeTxId) return;
 
-    let isSubscribed = true;
-    const interval = setInterval(async () => {
+    let stopped = false; // guard to prevent state updates after cleanup
+    const intervalId = setInterval(async () => {
+      if (stopped) return;
       try {
         const response = await fetch(`/api/status?txId=${activeTxId}`);
         const data = await response.json();
-        if (isSubscribed && data.success && (data.status === 'paid' || data.status === 'approved' || data.status === 'completed')) {
-          clearInterval(interval);
+        if (!stopped && data.success && (data.status === 'paid' || data.status === 'approved' || data.status === 'completed')) {
+          clearInterval(intervalId);
+          stopped = true;
           depositFunds(depositAmount);
           setDepositStage('input');
           setActiveTxId('');
@@ -67,8 +69,8 @@ export default function WalletActions() {
     }, 3000);
 
     return () => {
-      isSubscribed = false;
-      clearInterval(interval);
+      stopped = true;
+      clearInterval(intervalId);
     };
   }, [depositStage, activeTxId, depositAmount, depositFunds]);
 

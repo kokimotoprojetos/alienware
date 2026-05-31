@@ -18,8 +18,8 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     description: 'Nó inicial de alto desempenho com sistema de refrigeração líquida criogênica. Otimizado para ciclos curtos de 7 dias de mineração.',
     tier: 'Core',
     cost: 50, // R$ 50,00
-    dailyYieldPercent: 10.0, // 10% ao dia
-    get dailyYieldAmount() { return +(this.cost * this.dailyYieldPercent / 100).toFixed(2); }, // R$ 5.00/dia
+    dailyYieldPercent: 20.0, // 20% ao dia
+    get dailyYieldAmount() { return +(this.cost * this.dailyYieldPercent / 100).toFixed(2); }, // R$ 10.00/dia
     efficiency: '94.2%',
     hashrate: '450 MH/s',
     powerConsumption: 240, // 240W

@@ -11,8 +11,11 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, message: 'Acesso negado: Token ausente.' });
     }
 
-    const adminUser = process.env.ADMIN_USERNAME || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'alienwareadmin2026';
+    const adminUser = process.env.ADMIN_USERNAME;
+    const adminPass = process.env.ADMIN_PASSWORD;
+    if (!adminUser || !adminPass) {
+      return res.status(500).json({ success: false, message: 'Configuração de admin ausente no servidor.' });
+    }
     const expectedToken = Buffer.from(`${adminUser}:${adminPass}`).toString('base64');
 
     if (authHeader !== `Bearer ${expectedToken}`) {

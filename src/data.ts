@@ -19,7 +19,7 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     tier: 'Core',
     cost: 50, // R$ 50,00
     dailyYieldPercent: 15.0, // 15% ao dia
-    dailyYieldAmount: 7.50, // R$ 7.50/dia
+    get dailyYieldAmount() { return +(this.cost * this.dailyYieldPercent / 100).toFixed(2); }, // R$ 7.50/dia
     efficiency: '94.2%',
     hashrate: '450 MH/s',
     powerConsumption: 240, // 240W
@@ -34,7 +34,7 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     tier: 'Aurora',
     cost: 120, // R$ 120,00
     dailyYieldPercent: 15.0, // 15% ao dia
-    dailyYieldAmount: 18.00, // R$ 18.00/dia
+    get dailyYieldAmount() { return +(this.cost * this.dailyYieldPercent / 100).toFixed(2); }, // R$ 18.00/dia
     efficiency: '97.1%',
     hashrate: '2.4 GH/s',
     powerConsumption: 450, // 450W
@@ -49,7 +49,7 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     tier: 'Supercluster',
     cost: 200, // R$ 200,00
     dailyYieldPercent: 15.0, // 15% ao dia
-    dailyYieldAmount: 30.00, // R$ 30.00/dia
+    get dailyYieldAmount() { return +(this.cost * this.dailyYieldPercent / 100).toFixed(2); }, // R$ 30.00/dia
     efficiency: '98.9%',
     hashrate: '11.8 GH/s',
     powerConsumption: 1200, // 1.2kW
@@ -64,7 +64,7 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     tier: 'Hypernode',
     cost: 350, // R$ 350,00
     dailyYieldPercent: 15.0, // 15% ao dia
-    dailyYieldAmount: 52.50, // R$ 52.50/dia
+    get dailyYieldAmount() { return +(this.cost * this.dailyYieldPercent / 100).toFixed(2); }, // R$ 52.50/dia
     efficiency: '99.4%',
     hashrate: '32.6 GH/s',
     powerConsumption: 2200, // 2.2kW
@@ -79,7 +79,7 @@ export const INITIAL_PRODUCTS: InvestmentProduct[] = [
     tier: 'Quantum',
     cost: 500, // R$ 500,00
     dailyYieldPercent: 15.0, // 15% ao dia
-    dailyYieldAmount: 75.00, // R$ 75.00/dia
+    get dailyYieldAmount() { return +(this.cost * this.dailyYieldPercent / 100).toFixed(2); }, // R$ 75.00/dia
     efficiency: '99.95%',
     hashrate: '68.5 GH/s',
     powerConsumption: 3600, // 3.6kW

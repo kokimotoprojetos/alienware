@@ -96,6 +96,9 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return (Math.abs(hash % 900000) + 100000).toString();
   };
 
+  // Helper: today's date as YYYY-MM-DD string
+  const todayDateStr = () => new Date().toISOString().split('T')[0];
+
   // Load session from localStorage on mount & sync with Supabase
   useEffect(() => {
     if (!supabase) {
@@ -120,7 +123,21 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 setTransactions(safeParseArray(data.transactions));
                 setReferrals(safeParseArray(data.referrals));
                 setCompletedMissions(safeParseArray(data.completed_missions));
-                setCheckInClaimedToday(data.checkin_claimed_today || false);
+
+                // BUG FIX #5: Auto-reset check-in if stored date != today
+                const storedCheckinDate = data.last_checkin_date || null;
+                const isNewDay = storedCheckinDate !== todayDateStr();
+                if (isNewDay && data.checkin_claimed_today) {
+                  setCheckInClaimedToday(false);
+                  // Reset in DB silently
+                  supabase
+                    .from('profiles')
+                    .update({ checkin_claimed_today: false, last_checkin_date: null })
+                    .eq('id', data.id)
+                    .then(() => {});
+                } else {
+                  setCheckInClaimedToday(data.checkin_claimed_today || false);
+                }
               } else {
                 logout();
               }
@@ -132,7 +149,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, []);
 
-  // Sync state to Supabase when it changes
+  // Sync state to Supabase when it changes (debounce 15s to reduce write pressure)
   useEffect(() => {
     if (!user || !supabase) return;
 
@@ -154,146 +171,123 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     };
 
-    const timeout = setTimeout(syncData, 1000);
+    const timeout = setTimeout(syncData, 15000); // BUG FIX #8: increased from 1s to 15s
     return () => clearTimeout(timeout);
   }, [balance, userRigs, transactions, referrals, completedMissions, checkInClaimedToday, user]);
 
-  // Auth Functions
+  // Auth Functions — SEC FIX #1: use secure API route with bcryptjs
   const login = async (phoneOrEmail: string, passwordRequired: string): Promise<boolean> => {
-    if (!supabase) {
-      alert('Configuração ausente: Por favor, adicione as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no painel de controle da Vercel para liberar o login e banco de dados real.');
-      return false;
-    }
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('phone_or_email', phoneOrEmail)
-        .eq('password', passwordRequired)
-        .single();
+      const response = await fetch('/api/auth-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneOrEmail, password: passwordRequired })
+      });
 
-      if (error || !data) {
-        return false;
-      }
+      const data = await response.json();
+      if (!response.ok || !data.success) return false;
 
-      setUser({ id: data.id, phone_or_email: data.phone_or_email });
-      setBalance(Number(data.balance));
-      setUserRigs(safeParseArray(data.user_rigs));
-      setTransactions(safeParseArray(data.transactions));
-      setReferrals(safeParseArray(data.referrals));
-      setCompletedMissions(safeParseArray(data.completed_missions));
-      setCheckInClaimedToday(data.checkin_claimed_today || false);
-      
-      localStorage.setItem('aw_logged_user', JSON.stringify({ id: data.id, phone_or_email: data.phone_or_email }));
+      setUser(data.user);
+      setBalance(Number(data.profile.balance));
+      setUserRigs(safeParseArray(data.profile.user_rigs));
+      setTransactions(safeParseArray(data.profile.transactions));
+      setReferrals(safeParseArray(data.profile.referrals));
+      setCompletedMissions(safeParseArray(data.profile.completed_missions));
+
+      // BUG FIX #5: Check-in date validation on login
+      const storedCheckinDate = data.profile.last_checkin_date || null;
+      const isNewDay = storedCheckinDate !== todayDateStr();
+      setCheckInClaimedToday(isNewDay ? false : (data.profile.checkin_claimed_today || false));
+
+      localStorage.setItem('aw_logged_user', JSON.stringify({ id: data.user.id, phone_or_email: data.user.phone_or_email }));
+      localStorage.setItem('aw_session_token', data.sessionToken);
       return true;
     } catch (e) {
-      console.error(e);
+      console.error('[Login] Error:', e);
       return false;
     }
   };
 
+  // SEC FIX #1: register now uses secure API route with bcryptjs password hashing
   const register = async (phoneOrEmail: string, passwordRequired: string): Promise<boolean> => {
-    if (!supabase) {
-      alert('Configuração ausente: Por favor, adicione as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no painel de controle da Vercel para liberar o cadastro e banco de dados real.');
-      return false;
-    }
     try {
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('phone_or_email', phoneOrEmail)
-        .maybeSingle();
+      const response = await fetch('/api/auth-register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneOrEmail, password: passwordRequired })
+      });
 
-      if (existing) {
-        return false;
-      }
+      const data = await response.json();
+      if (!response.ok || !data.success) return false;
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert([{
-          phone_or_email: phoneOrEmail,
-          password: passwordRequired,
-          balance: 0.00,
-          user_rigs: [],
-          transactions: [],
-          referrals: [],
-          completed_missions: [],
-          checkin_claimed_today: false
-        }])
-        .select()
-        .single();
-
-      if (error || !data) {
-        console.error('Registration error:', error);
-        return false;
-      }
-
-      setUser({ id: data.id, phone_or_email: data.phone_or_email });
+      setUser(data.user);
       setBalance(0.00);
       setUserRigs([]);
       setTransactions([]);
       setReferrals([]);
       setCompletedMissions([]);
       setCheckInClaimedToday(false);
-      
-      localStorage.setItem('aw_logged_user', JSON.stringify({ id: data.id, phone_or_email: data.phone_or_email }));
+
+      localStorage.setItem('aw_logged_user', JSON.stringify({ id: data.user.id, phone_or_email: data.user.phone_or_email }));
+      localStorage.setItem('aw_session_token', data.sessionToken);
 
       // Process referral signup bonus if referrer code exists
-      const referrerCode = localStorage.getItem('aw_referrer');
-      if (referrerCode && referrerCode !== getReferralCode(data)) {
-        try {
-          // Fetch all profiles to find which user has the matching 6-digit code
-          const { data: allProfiles } = await supabase
-            .from('profiles')
-            .select('*');
+      if (supabase) {
+        const referrerCode = localStorage.getItem('aw_referrer');
+        if (referrerCode && referrerCode !== getReferralCode(data.user)) {
+          try {
+            const { data: allProfiles } = await supabase
+              .from('profiles')
+              .select('*');
 
-          if (allProfiles) {
-            const referrerData = allProfiles.find(p => getReferralCode(p) === referrerCode);
+            if (allProfiles) {
+              const referrerData = allProfiles.find((p: any) => getReferralCode(p) === referrerCode);
 
-            if (referrerData) {
-              const refs = safeParseArray(referrerData.referrals);
-              if (!refs.some((r: any) => r.username === phoneOrEmail.split('@')[0])) {
-                const newReferralItem = {
-                  id: data.id,
-                  username: phoneOrEmail.split('@')[0],
-                  avatarUrl: ['👽', '👾', '🤖', '👑', '🚀'][Math.floor(Math.random() * 5)],
-                  joinedAt: Date.now(),
-                  investmentAmount: 0,
-                  commissionEarned: 0
-                };
-                const updatedRefs = [...refs, newReferralItem];
-                const referralBonus = 5.00;
-                const updatedBalance = Number(referrerData.balance) + referralBonus;
+              if (referrerData) {
+                const refs = safeParseArray(referrerData.referrals);
+                if (!refs.some((r: any) => r.username === phoneOrEmail.split('@')[0])) {
+                  const newReferralItem = {
+                    id: data.user.id,
+                    username: phoneOrEmail.split('@')[0],
+                    avatarUrl: ['👽', '👾', '🤖', '👑', '🚀'][Math.floor(Math.random() * 5)],
+                    joinedAt: Date.now(),
+                    investmentAmount: 0,
+                    commissionEarned: 0
+                  };
+                  const updatedRefs = [...refs, newReferralItem];
+                  const referralBonus = 5.00;
+                  const updatedBalance = Number(referrerData.balance) + referralBonus;
 
-                const tx: Transaction = {
-                  id: `tx-${Date.now()}`,
-                  type: 'referral_bonus',
-                  amount: referralBonus,
-                  timestamp: Date.now(),
-                  status: 'completed',
-                  details: `Bônus de Indicação Co-piloto (${phoneOrEmail.split('@')[0]})`
-                };
-                const updatedTxs = [tx, ...safeParseArray(referrerData.transactions)];
+                  const tx: Transaction = {
+                    id: `tx-${Date.now()}`,
+                    type: 'referral_bonus',
+                    amount: referralBonus,
+                    timestamp: Date.now(),
+                    status: 'completed',
+                    details: `Bônus de Indicação Co-piloto (${phoneOrEmail.split('@')[0]})`
+                  };
+                  const updatedTxs = [tx, ...safeParseArray(referrerData.transactions)];
 
-                await supabase
-                  .from('profiles')
-                  .update({
-                    referrals: updatedRefs,
-                    balance: updatedBalance,
-                    transactions: updatedTxs
-                  })
-                  .eq('id', referrerData.id);
+                  await supabase
+                    .from('profiles')
+                    .update({
+                      referrals: updatedRefs,
+                      balance: updatedBalance,
+                      transactions: updatedTxs
+                    })
+                    .eq('id', referrerData.id);
+                }
               }
             }
+          } catch (refError) {
+            console.error('[Supabase Referral Signup] Failed to record signup bonus:', refError);
           }
-        } catch (refError) {
-          console.error('[Supabase Referral Signup] Failed to record signup bonus:', refError);
         }
       }
 
       return true;
     } catch (e) {
-      console.error(e);
+      console.error('[Register] Error:', e);
       return false;
     }
   };
@@ -301,6 +295,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const logout = () => {
     setUser(null);
     localStorage.removeItem('aw_logged_user');
+    localStorage.removeItem('aw_session_token'); // SEC FIX: clear session token on logout
     setBalance(0.00);
     setUserRigs([]);
     setTransactions([]);
@@ -507,6 +502,11 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const refundAmount = rig.cost * 0.70;
 
+    // BUG FIX #4: subtract this rig's accumulated yield from global unclaimedYield
+    // to prevent collecting yield from a rig that was already sold
+    const rigAccumulatedYield = (rig.dailyYieldAmount / 1440) * rig.accumulatedMinutes;
+    setUnclaimedYield(prev => Math.max(0, prev - rigAccumulatedYield));
+
     setUserRigs(prev => prev.filter(r => r.id !== userRigId));
     setBalance(prev => prev + refundAmount);
 
@@ -611,7 +611,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Withdraw funds via backend integration with Lytron Pay
+  // Withdraw funds via backend integration
   const withdrawFunds = async (amount: number, pixKey: string): Promise<{ success: boolean; message: string }> => {
     if (!user) {
       return { success: false, message: 'Sessão inválida. Por favor, realize o login novamente.' };
@@ -623,11 +623,14 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return { success: false, message: 'Saldo insuficiente para esta transação.' };
     }
 
+    const sessionToken = localStorage.getItem('aw_session_token') || '';
+
     try {
       const response = await fetch('/api/withdraw', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Session-Token': sessionToken, // SEC FIX #3: authenticate the request
         },
         body: JSON.stringify({ amount, pixKey, userId: user.id })
       });
@@ -641,6 +644,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         };
       }
 
+      // BUG FIX #7: only debit balance AFTER server confirms success
       setBalance(prev => prev - amount);
 
       const tx: Transaction = {
@@ -676,6 +680,15 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const checkInReward = 0.50;
     setBalance(prev => prev + checkInReward);
     setCheckInClaimedToday(true);
+
+    // BUG FIX #5: persist today's date alongside the boolean so reset works on next login
+    if (supabase && user) {
+      supabase
+        .from('profiles')
+        .update({ checkin_claimed_today: true, last_checkin_date: todayDateStr() })
+        .eq('id', user.id)
+        .then(() => {});
+    }
 
     const tx: Transaction = {
       id: `tx-${Date.now()}`,

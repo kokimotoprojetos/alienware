@@ -99,6 +99,81 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Helper: today's date as YYYY-MM-DD string
   const todayDateStr = () => new Date().toISOString().split('T')[0];
 
+  // Helper to process offline yield and auto-claim after midnight
+  const processOfflineYield = (
+    currentBalance: number,
+    currentRigs: UserRig[],
+    currentTransactions: Transaction[],
+    userId: string
+  ) => {
+    if (!currentRigs || currentRigs.length === 0) {
+      setBalance(currentBalance);
+      setUserRigs(currentRigs);
+      setTransactions(currentTransactions);
+      return;
+    }
+
+    let totalEarned = 0;
+    const now = Date.now();
+    const todayStr = new Date(now).toLocaleDateString('pt-BR');
+
+    const updatedRigs = currentRigs.map(rig => {
+      const lastClaim = rig.lastClaimedTimestamp || rig.purchaseTimestamp;
+      const lastClaimStr = new Date(lastClaim).toLocaleDateString('pt-BR');
+      
+      // Calculate elapsed time
+      const elapsedMs = now - lastClaim;
+      if (elapsedMs <= 0) return rig;
+
+      const dailyYield = rig.dailyYieldAmount;
+      const earned = (dailyYield / 86400000) * elapsedMs;
+      
+      // Auto-claim only if date has changed (past midnight)
+      if (lastClaimStr !== todayStr) {
+        totalEarned += earned;
+        return {
+          ...rig,
+          lastClaimedTimestamp: now,
+          accumulatedMinutes: 0
+        };
+      }
+      return rig;
+    });
+
+    if (totalEarned > 0.01) {
+      const newBalance = currentBalance + totalEarned;
+      const newTx: Transaction = {
+        id: `tx-autoclaim-${now}`,
+        type: 'claim_yield',
+        amount: totalEarned,
+        timestamp: now,
+        status: 'completed',
+        details: `Rendimento creditado automaticamente pós-meia-noite`
+      };
+      const newTxs = [newTx, ...currentTransactions];
+
+      setBalance(newBalance);
+      setUserRigs(updatedRigs);
+      setTransactions(newTxs);
+
+      if (supabase) {
+        supabase
+          .from('profiles')
+          .update({
+            balance: newBalance,
+            user_rigs: updatedRigs,
+            transactions: newTxs
+          })
+          .eq('id', userId)
+          .then(() => {});
+      }
+    } else {
+      setBalance(currentBalance);
+      setUserRigs(updatedRigs);
+      setTransactions(currentTransactions);
+    }
+  };
+
   // Load session from localStorage on mount & sync with Supabase
   useEffect(() => {
     if (!supabase) {
@@ -118,11 +193,16 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             .then(({ data, error }) => {
               if (data && !error) {
                 setUser({ id: data.id, phone_or_email: data.phone_or_email });
-                setBalance(Number(data.balance));
-                setUserRigs(safeParseArray(data.user_rigs));
-                setTransactions(safeParseArray(data.transactions));
                 setReferrals(safeParseArray(data.referrals));
                 setCompletedMissions(safeParseArray(data.completed_missions));
+
+                // Process offline yields and set user rigs/balance/txs
+                processOfflineYield(
+                  Number(data.balance),
+                  safeParseArray(data.user_rigs),
+                  safeParseArray(data.transactions),
+                  data.id
+                );
 
                 // BUG FIX #5: Auto-reset check-in if stored date != today
                 const storedCheckinDate = data.last_checkin_date || null;
@@ -188,11 +268,16 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (!response.ok || !data.success) return false;
 
       setUser(data.user);
-      setBalance(Number(data.profile.balance));
-      setUserRigs(safeParseArray(data.profile.user_rigs));
-      setTransactions(safeParseArray(data.profile.transactions));
       setReferrals(safeParseArray(data.profile.referrals));
       setCompletedMissions(safeParseArray(data.profile.completed_missions));
+
+      // Process offline yields on login
+      processOfflineYield(
+        Number(data.profile.balance),
+        safeParseArray(data.profile.user_rigs),
+        safeParseArray(data.profile.transactions),
+        data.user.id
+      );
 
       // BUG FIX #5: Check-in date validation on login
       const storedCheckinDate = data.profile.last_checkin_date || null;
@@ -308,12 +393,44 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Core Simulation Loop using interval
   useEffect(() => {
     const tickInterval = 1000; // Tick every 1s
+    let lastDateStr = new Date().toLocaleDateString('pt-BR');
     
     const interval = setInterval(() => {
       const simSecondsPassed = speedRef.current;
       setSimulationTimeElapsed(prev => prev + simSecondsPassed);
 
       if (userRigsRef.current.length === 0) return;
+
+      // Midnight auto-claim check
+      const currentDateStr = new Date().toLocaleDateString('pt-BR');
+      if (currentDateStr !== lastDateStr) {
+        lastDateStr = currentDateStr;
+        
+        // Auto-claim all unclaimed yield to balance
+        setUnclaimedYield(unclaimed => {
+          if (unclaimed > 0.01) {
+            setBalance(prev => prev + unclaimed);
+            const now = Date.now();
+            const tx: Transaction = {
+              id: `tx-midnight-${now}`,
+              type: 'claim_yield',
+              amount: unclaimed,
+              timestamp: now,
+              status: 'completed',
+              details: `Rendimento creditado automaticamente pós-meia-noite (Online)`
+            };
+            setTransactions(prev => [tx, ...prev]);
+            setUserRigs(prevRigs => 
+              prevRigs.map(rig => ({
+                ...rig,
+                lastClaimedTimestamp: now,
+                accumulatedMinutes: 0
+              }))
+            );
+          }
+          return 0;
+        });
+      }
 
       let totalTickYield = 0;
       setUserRigs(prevRigs => 

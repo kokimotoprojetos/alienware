@@ -201,125 +201,54 @@ export default function Dashboard() {
 
       </div>
 
-      {/* Main Core Controls Box: Unclaimed income + Warp Drive Modifier */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Main Core Controls Box: Security and Check-in */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {/* Cloud Mining Central Income Extractor */}
-        <div className="lg:col-span-7 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-500 via-indigo-500 to-rose-500" />
-          
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-slate-800 pb-5">
-            <div>
+        {/* Security & Network Status Card */}
+        <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping inline-block" />
-                <h3 className="text-lg font-semibold text-slate-100 font-sans tracking-tight">Extrator de Renda Alienware</h3>
+                <Sliders className="w-4 h-4 text-cyan-400" />
+                <h4 className="text-sm font-semibold text-slate-200 font-sans tracking-tight">Status de Rede Alienware</h4>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">Colete os rendimentos gerados cooperativamente pela frota ativa.</p>
-            </div>
-            
-            {/* Quick claim single button */}
-            <button
-              onClick={claimYield}
-              disabled={unclaimedYield <= 0.01}
-              className={`w-full md:w-auto px-5 py-2.5 rounded-lg text-xs font-mono font-bold uppercase tracking-wider transition duration-300 flex items-center justify-center gap-2 border shadow-lg ${
-                unclaimedYield > 0.01
-                  ? 'bg-gradient-to-r from-cyan-505 via-cyan-500 to-indigo-600 text-slate-900 border-cyan-400 shadow-cyan-500/20 hover:scale-102 hover:shadow-cyan-400/40 cursor-pointer'
-                  : 'bg-slate-800/40 text-slate-500 border-slate-800 cursor-not-allowed'
-              }`}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${unclaimedYield > 0.01 ? 'animate-spin' : ''}`} />
-              COLETAR SINAL (R$ {unclaimedYield.toFixed(2)})
-            </button>
-          </div>
-
-          {/* Central Yield Reactor Visual */}
-          <div className="bg-slate-950/80 border border-slate-800/60 rounded-xl p-5 flex flex-col items-center justify-center text-center relative overflow-hidden py-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.06)_0%,transparent_70%)] pointer-events-none" />
-            
-            {/* Glowing circle representation of ledger energy */}
-            <div className="relative w-32 h-32 flex items-center justify-center mb-4">
-              <div className="absolute inset-0 rounded-full border-2 border-dashed border-cyan-500/30 animate-[spin_40s_linear_infinite]" />
-              <div className="absolute inset-2 rounded-full border border-double border-indigo-500/20" />
-              <div className={`absolute inset-4 rounded-full bg-gradient-to-br from-cyan-950/20 to-indigo-950/40 border border-cyan-500/10 flex flex-col items-center justify-center transition-all shadow-[0_0_30px_rgba(6,182,212,0.05)] ${unclaimedYield > 0.01 ? 'shadow-[0_0_40px_rgba(6,182,212,0.15)] border-cyan-400/30' : ''}`} />
-              
-              <div className="z-10 text-center">
-                <Coins className={`w-8 h-8 mx-auto mb-1 text-cyan-400 ${unclaimedYield > 0.01 ? 'animate-bounce' : 'opacity-60'}`} />
-                <span className="text-2xs font-mono text-cyan-500 uppercase tracking-widest">REACTOR</span>
-              </div>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10B981]"></div>
             </div>
 
-            <p className="text-2xs font-mono text-slate-400 uppercase tracking-widest">Rendimento Acumulado Aguardando Coleta</p>
-            <h2 className="text-3xl font-bold font-sans tracking-tight text-slate-100 mt-2">
-              R$ {unclaimedYield.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
-            </h2>
-            <p className="text-2xs text-slate-500 font-mono mt-1">
-              Velocidade líquida atual da rede: {((userRigs.reduce((acc, curr) => acc + curr.dailyYieldAmount, 0)) / 86400).toFixed(5)} R$/segundo
+            <p className="text-xs text-slate-400 mb-4">
+              Sua conexão com o ecossistema de processamento em nuvem Alienware Capital está segura e criptografada de ponta a ponta.
             </p>
 
-            <div className="w-full max-w-sm mt-5 bg-slate-900 rounded-lg p-2.5 border border-slate-800 text-3xs text-slate-400 font-mono text-left space-y-1">
-              <div className="flex justify-between">
-                <span>REFRIGERAÇÃO EXTRA:</span>
-                <span className="text-cyan-400">ATIVADO (LIQUID NITROGEN)</span>
+            {/* Holographic specs */}
+            <div className="space-y-2.5 font-mono text-2xs">
+              <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
+                <span className="text-slate-500">SEGURANÇA FINANCEIRA</span>
+                <span className="text-[#18FF6D] font-bold">ATIVA E SEGURA</span>
               </div>
-              <div className="flex justify-between">
-                <span>ALOCAÇÃO COMPUTAÇÃO IN NUVEM:</span>
-                <span className="text-indigo-400">100% EXCLUSIVO</span>
+              <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
+                <span className="text-slate-500">CRIPTOGRAFIA LEDGER</span>
+                <span className="text-indigo-400 font-bold">SHA-256 PROTOCOL</span>
+              </div>
+              <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
+                <span className="text-slate-500">LATÊNCIA DA MATRIX</span>
+                <span className="text-emerald-400 font-bold">4ms (ESTÁVEL)</span>
               </div>
             </div>
           </div>
 
-          {/* Quick instructions */}
-          <div className="mt-4 text-2xs text-slate-400 space-y-1 bg-slate-950/30 p-3 rounded-lg border border-slate-800/40">
-            <span className="font-mono text-slate-300 font-medium block mb-0.5">ℹ️ SOBRE O PROCESSO DE RENDIMENTOS:</span>
-            <p>Os hardwares em sua frota geram frações de rendimentos a cada segundo. Ao coletar, os valores são sacados para sua carteira instantaneamente, ficando prontos para reinvestimento ou saque PIX!</p>
+          <div className="mt-5 border-t border-slate-800/60 pt-3">
+            <span className="text-[10px] font-mono text-slate-500 block uppercase mb-1">Tecnologia Core</span>
+            <div className="flex justify-between text-2xs text-slate-400">
+              <span>Certificado SSL :</span>
+              <span className="text-slate-350 font-mono">TLS 1.3 ATIVO</span>
+            </div>
           </div>
         </div>
 
-        {/* Security & Network Status Card */}
-        <div className="lg:col-span-5 flex flex-col justify-between gap-6">
-          <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-cyan-400" />
-                  <h4 className="text-sm font-semibold text-slate-200 font-sans tracking-tight">Status de Rede Alienware</h4>
-                </div>
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10B981]"></div>
-              </div>
-
-              <p className="text-xs text-slate-400 mb-4">
-                Sua conexão com o ecossistema de processamento em nuvem Alienware Capital está segura e criptografada de ponta a ponta.
-              </p>
-
-              {/* Holographic specs */}
-              <div className="space-y-2.5 font-mono text-2xs">
-                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
-                  <span className="text-slate-500">SEGURANÇA FINANCEIRA</span>
-                  <span className="text-[#18FF6D] font-bold">ATIVA E SEGURA</span>
-                </div>
-                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
-                  <span className="text-slate-500">CRIPTOGRAFIA LEDGER</span>
-                  <span className="text-indigo-400 font-bold">SHA-256 PROTOCOL</span>
-                </div>
-                <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/40 flex justify-between">
-                  <span className="text-slate-500">LATÊNCIA DA MATRIX</span>
-                  <span className="text-emerald-400 font-bold">4ms (ESTÁVEL)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 border-t border-slate-800/60 pt-3">
-              <span className="text-[10px] font-mono text-slate-500 block uppercase mb-1">Tecnologia Core</span>
-              <div className="flex justify-between text-2xs text-slate-400">
-                <span>Certificado SSL :</span>
-                <span className="text-slate-350 font-mono">TLS 1.3 ATIVO</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Check-in Module */}
-          <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
+        {/* Quick Check-in Module */}
+        <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
+          <div>
             <div className="flex justify-between items-start mb-3">
               <div>
                 <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-500">Bônus Criogênico Diário</span>
@@ -330,7 +259,9 @@ export default function Dashboard() {
             <p className="text-xs text-slate-400 mb-4">
               Reivindique sua cota diária de resfriamento para ganhar um bônus imediato de **R$ 0,50** no saldo de investimentos.
             </p>
+          </div>
 
+          <div>
             <button
               onClick={claimCheckIn}
               disabled={checkInClaimedToday}
@@ -343,7 +274,6 @@ export default function Dashboard() {
               {checkInClaimedToday ? '✓ CHECK-IN REALIZADO HOJE' : 'REGISTRAR CARGA (+ R$ 0,50)'}
             </button>
           </div>
-
         </div>
 
       </div>

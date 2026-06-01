@@ -73,8 +73,7 @@ export default async function handler(req, res) {
         transactions: profile.transactions,
         referrals: profile.referrals,
         completed_missions: profile.completed_missions,
-        checkin_claimed_today: profile.checkin_claimed_today,
-        last_checkin_date: profile.last_checkin_date || null
+        checkin_claimed_today: profile.checkin_claimed_today
       },
       sessionToken
     });

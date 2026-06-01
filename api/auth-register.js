@@ -57,8 +57,7 @@ export default async function handler(req, res) {
         transactions: [],
         referrals: [],
         completed_missions: [],
-        checkin_claimed_today: false,
-        last_checkin_date: null
+        checkin_claimed_today: false
       }])
       .select()
       .single();

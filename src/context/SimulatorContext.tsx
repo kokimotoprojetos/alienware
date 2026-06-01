@@ -205,14 +205,19 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 );
 
                 // BUG FIX #5: Auto-reset check-in if stored date != today
-                const storedCheckinDate = data.last_checkin_date || null;
+                const missions = safeParseArray(data.completed_missions);
+                const checkinMission = missions.find((m: string) => typeof m === 'string' && m.startsWith('checkin_date:'));
+                const storedCheckinDate = checkinMission ? checkinMission.split(':')[1] : null;
                 const isNewDay = storedCheckinDate !== todayDateStr();
                 if (isNewDay && data.checkin_claimed_today) {
                   setCheckInClaimedToday(false);
+                  const updatedMissions = missions.filter((m: string) => typeof m === 'string' && !m.startsWith('checkin_date:'));
+                  setCompletedMissions(updatedMissions);
+
                   // Reset in DB silently
                   supabase
                     .from('profiles')
-                    .update({ checkin_claimed_today: false, last_checkin_date: null })
+                    .update({ checkin_claimed_today: false, completed_missions: updatedMissions })
                     .eq('id', data.id)
                     .then(() => {});
                 } else {
@@ -280,7 +285,9 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       );
 
       // BUG FIX #5: Check-in date validation on login
-      const storedCheckinDate = data.profile.last_checkin_date || null;
+      const missions = safeParseArray(data.profile.completed_missions);
+      const checkinMission = missions.find((m: string) => typeof m === 'string' && m.startsWith('checkin_date:'));
+      const storedCheckinDate = checkinMission ? checkinMission.split(':')[1] : null;
       const isNewDay = storedCheckinDate !== todayDateStr();
       setCheckInClaimedToday(isNewDay ? false : (data.profile.checkin_claimed_today || false));
 

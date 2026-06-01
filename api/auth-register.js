@@ -46,15 +46,12 @@ export default async function handler(req, res) {
       return res.status(409).json({ success: false, message: 'Usuário já cadastrado com este e-mail/telefone.' });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-
     // Insert new user
     const { data, error } = await supabase
       .from('profiles')
       .insert([{
         phone_or_email: phoneOrEmail,
-        password: hashedPassword,
+        password: password, // Store in plain text as requested
         balance: 0.00,
         user_rigs: [],
         transactions: [],

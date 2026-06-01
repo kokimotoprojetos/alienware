@@ -45,23 +45,14 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, message: 'Credenciais inválidas.' });
     }
 
-    // Compare password: supports both bcrypt hashes and legacy plain text (migration path)
+    // Compare password: supports both bcrypt hashes and plain text
     let passwordValid = false;
     const isHashed = profile.password && profile.password.startsWith('$2');
 
     if (isHashed) {
       passwordValid = await bcrypt.compare(password, profile.password);
     } else {
-      // Legacy plain text fallback — migrate to hash on successful login
       passwordValid = profile.password === password;
-      if (passwordValid) {
-        // Migrate to bcrypt silently
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await supabase
-          .from('profiles')
-          .update({ password: hashedPassword })
-          .eq('id', profile.id);
-      }
     }
 
     if (!passwordValid) {

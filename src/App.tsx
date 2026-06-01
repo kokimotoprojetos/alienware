@@ -31,6 +31,7 @@ import {
 function AppContent() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'store' | 'fleet' | 'wallet' | 'referrals'>('dashboard');
   const [systemTime, setSystemTime] = useState<string>('');
+  const [showTelegramModal, setShowTelegramModal] = useState<boolean>(true);
   
   const { balance, balanceInvested, userRigs, user, logout } = useSimulator();
 
@@ -256,6 +257,48 @@ function AppContent() {
           </div>
         </div>
       </footer>
+
+      {/* Telegram Group Popup Modal */}
+      {showTelegramModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0e0e12] border border-[#18FF6D33] rounded-3xl w-full max-w-sm p-6 relative overflow-hidden shadow-2xl text-center space-y-5">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#18FF6D] to-transparent shadow-[0_0_10px_#18FF6D]" />
+            
+            {/* Telegram Icon */}
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#0088cc]/10 border border-[#0088cc]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,136,204,0.15)]">
+              <svg className="w-8 h-8 text-[#0088cc] fill-current" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.74 3.79-1.65 6.31-2.74 7.57-3.27 3.6-1.5 4.35-1.76 4.84-1.77.11 0 .35.03.5.16.13.12.17.28.19.39.02.13.02.26.01.37z" />
+              </svg>
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-md font-bold tracking-tight text-white uppercase font-sans">
+                Grupo Oficial Telegram
+              </h3>
+              <p className="text-3xs text-slate-400 leading-relaxed font-mono">
+                Conecte-se ao nosso Telegram oficial para alertas de mineração, comprovantes de depósitos/saques e suporte prioritário.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <a
+                href="https://t.me/Alinwatecapital"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 bg-[#0088cc] hover:bg-[#0088cc]/95 text-white font-mono text-3xs font-bold uppercase rounded-xl transition duration-300 shadow-md shadow-[#0088cc]/20 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                Entrar no Telegram
+              </a>
+              <button
+                onClick={() => setShowTelegramModal(false)}
+                className="w-full py-3 bg-[#18FF6D] hover:bg-[#18FF6D]/95 text-slate-950 font-mono text-3xs font-bold uppercase rounded-xl transition duration-300 shadow-md shadow-[#18FF6D]/20 cursor-pointer"
+              >
+                Acessar Plataforma
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

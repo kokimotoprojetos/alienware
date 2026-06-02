@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -86,64 +87,83 @@ export default async function handler(req, res) {
 
     // Call Lytron Pay payout API
     const LYTRONPAY_API_KEY = process.env.LYTRONPAY_API_KEY || '';
+    const LYTRONPAY_SECRET_HASH = process.env.LYTRONPAY_SECRET_HASH || '';
+
     if (LYTRONPAY_API_KEY && !LYTRONPAY_API_KEY.includes('YOUR_LYTRONPAY_API_KEY')) {
       console.log(`[LytronPay Payout] Initiating real transfer for R$ ${netAmount} to key ${pixKey}...`);
       
       let pixKeyType = 'evp';
-      const cleanKey = pixKey.replace(/\D/g, '');
+      let cleanKey = pixKey.trim();
+      const onlyDigits = pixKey.replace(/\D/g, '');
+
       if (pixKey.includes('@')) {
         pixKeyType = 'email';
-      } else if (cleanKey.length === 11) {
+      } else if (onlyDigits.length === 11) {
         pixKeyType = 'cpf';
-      } else if (cleanKey.length === 14) {
+        cleanKey = onlyDigits;
+      } else if (onlyDigits.length === 14) {
         pixKeyType = 'cnpj';
-      } else if (cleanKey.length >= 10 && cleanKey.length <= 13) {
+        cleanKey = onlyDigits;
+      } else if (onlyDigits.length >= 10 && onlyDigits.length <= 13) {
         pixKeyType = 'phone';
+        let phoneKey = onlyDigits;
+        if (!phoneKey.startsWith('55') && phoneKey.length <= 11) {
+          phoneKey = '55' + phoneKey;
+        }
+        if (!phoneKey.startsWith('+')) {
+          phoneKey = '+' + phoneKey;
+        }
+        cleanKey = phoneKey;
       }
 
-      const endpoints = [
-        'https://api.lytronpay.com/api/v1/payouts',
-        'https://api.lytronpay.com/api/v1/withdrawals',
-        'https://api.lytronpay.com/api/v1/withdraw'
-      ];
-      
+      const payoutUrl = 'https://api.lytronpay.com/api/v1/payouts';
+      const payoutPayload = {
+        amount: parseFloat(netAmount.toFixed(2)),
+        pix: {
+          type: pixKeyType,
+          key: cleanKey
+        },
+        description: `Saque Alienware Hub - ${txId}`,
+        idempotency_key: txId
+      };
+
+      const rawBody = JSON.stringify(payoutPayload);
+      let headers = {
+        'Content-Type': 'application/json',
+        'Api-Access-Key': LYTRONPAY_API_KEY,
+        'Idempotency-Key': txId,
+        'X-Client-IP': clientIp
+      };
+
+      console.log(`[LytronPay Payout] Sending request to ${payoutUrl}`, {
+        payload: payoutPayload,
+        headers: { ...headers, 'Api-Access-Key': '***' }
+      });
+
       let payoutSuccess = false;
       let lastErrorText = '';
       let lastStatus = 500;
 
-      for (const url of endpoints) {
-        console.log(`[LytronPay Payout] Trying endpoint: ${url} ...`);
-        try {
-          const payoutResponse = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Api-Access-Key': LYTRONPAY_API_KEY
-            },
-            body: JSON.stringify({
-              amount: parseFloat(netAmount.toFixed(2)),
-              pixKey: pixKey,
-              pixKeyType: pixKeyType
-            })
-          });
+      try {
+        const payoutResponse = await fetch(payoutUrl, {
+          method: 'POST',
+          headers: headers,
+          body: rawBody
+        });
 
-          const payoutText = await payoutResponse.text();
-          lastStatus = payoutResponse.status;
-          lastErrorText = payoutText;
+        const payoutText = await payoutResponse.text();
+        lastStatus = payoutResponse.status;
+        lastErrorText = payoutText;
 
-          if (payoutResponse.ok) {
-            console.log(`[LytronPay Payout] Success on endpoint ${url}:`, payoutText);
-            payoutSuccess = true;
-            break;
-          } else if (payoutResponse.status !== 404) {
-            // Endpoint exists but returned parameter error (e.g. 400 Bad Request)
-            console.log(`[LytronPay Payout] Endpoint ${url} exists but returned error status ${payoutResponse.status}:`, payoutText);
-            break;
-          }
-        } catch (err) {
-          console.error(`[LytronPay Payout] Network error on ${url}:`, err);
-          lastErrorText = err.message;
+        if (payoutResponse.ok) {
+          console.log(`[LytronPay Payout] Success on endpoint ${payoutUrl}:`, payoutText);
+          payoutSuccess = true;
+        } else {
+          console.error(`[LytronPay Payout] Error response from ${payoutUrl} (Status ${lastStatus}):`, payoutText);
         }
+      } catch (err) {
+        console.error(`[LytronPay Payout] Network error on ${payoutUrl}:`, err);
+        lastErrorText = err.message;
       }
 
       if (!payoutSuccess) {

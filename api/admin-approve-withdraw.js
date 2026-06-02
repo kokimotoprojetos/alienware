@@ -71,11 +71,62 @@ export default async function handler(req, res) {
     };
 
     const txs = safeParseArray(profile.transactions);
-    let txFound = false;
+    const targetTx = txs.find(t => t.id === txId && t.type === 'withdraw' && t.status === 'pending');
+
+    if (!targetTx) {
+      return res.status(400).json({ success: false, message: 'Transação pendente de saque não encontrada.' });
+    }
+
+    // Extract pixKey and netAmount from transaction details
+    const detailsStr = targetTx.details || '';
+    const pixKeyMatch = detailsStr.match(/Chave Pix:\s*([^\s(]+)/);
+    const pixKey = pixKeyMatch ? pixKeyMatch[1] : '';
+    const netAmountMatch = detailsStr.match(/Líquido:\s*R\$\s*([\d.]+)/);
+    const netAmount = netAmountMatch ? parseFloat(netAmountMatch[1]) : Number(targetTx.amount) * 0.90;
+
+    // Call Lytron Pay payout API
+    const LYTRONPAY_API_KEY = process.env.LYTRONPAY_API_KEY || '';
+    if (LYTRONPAY_API_KEY && !LYTRONPAY_API_KEY.includes('YOUR_LYTRONPAY_API_KEY')) {
+      console.log(`[LytronPay Payout] Initiating real transfer for R$ ${netAmount} to key ${pixKey}...`);
+      
+      let pixKeyType = 'evp';
+      const cleanKey = pixKey.replace(/\D/g, '');
+      if (pixKey.includes('@')) {
+        pixKeyType = 'email';
+      } else if (cleanKey.length === 11) {
+        pixKeyType = 'cpf';
+      } else if (cleanKey.length === 14) {
+        pixKeyType = 'cnpj';
+      } else if (cleanKey.length >= 10 && cleanKey.length <= 13) {
+        pixKeyType = 'phone';
+      }
+
+      const payoutResponse = await fetch('https://api.lytronpay.com/api/v1/transfers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Api-Access-Key': LYTRONPAY_API_KEY
+        },
+        body: JSON.stringify({
+          amount: parseFloat(netAmount.toFixed(2)),
+          pixKey: pixKey,
+          pixKeyType: pixKeyType
+        })
+      });
+
+      const payoutText = await payoutResponse.text();
+      console.log('[LytronPay Payout] Response:', payoutText);
+
+      if (!payoutResponse.ok) {
+        return res.status(payoutResponse.status).json({
+          success: false,
+          message: `Erro no gateway de pagamento (LytronPay): ${payoutText}`
+        });
+      }
+    }
 
     const updatedTxs = txs.map(t => {
-      if (t.id === txId && t.type === 'withdraw' && t.status === 'pending') {
-        txFound = true;
+      if (t.id === txId) {
         return {
           ...t,
           status: 'completed',
@@ -84,10 +135,6 @@ export default async function handler(req, res) {
       }
       return t;
     });
-
-    if (!txFound) {
-      return res.status(400).json({ success: false, message: 'Transação pendente de saque não encontrada.' });
-    }
 
     const { error: updateError } = await supabase
       .from('profiles')

@@ -22,6 +22,16 @@ export default async function handler(req, res) {
       return res.status(403).json({ success: false, message: 'Acesso negado: Token inválido.' });
     }
 
+    // IP Whitelist verification for withdrawal rejection
+    const rawIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket.remoteAddress || '';
+    const clientIp = rawIp.split(',')[0].trim();
+    const allowedIp = '138.122.43.14';
+    const isLocal = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1' || clientIp === '';
+
+    if (clientIp !== allowedIp && !isLocal) {
+      return res.status(403).json({ success: false, message: `Acesso negado: IP não autorizado (${clientIp}).` });
+    }
+
     const { userId, txId } = req.body;
     if (!userId || !txId) {
       return res.status(400).json({ success: false, message: 'ID do usuário e ID da transação são obrigatórios.' });

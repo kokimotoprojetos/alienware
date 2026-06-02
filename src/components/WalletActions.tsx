@@ -405,27 +405,27 @@ export default function WalletActions() {
                       <span className="text-xs font-mono text-slate-500">R$</span>
                       <input
                         type="number"
-                        min="20"
+                        min="15"
                         max="50000"
                         value={withdrawAmount}
-                        onChange={(e) => setWithdrawAmount(Math.max(20, Math.min(balance, Number(e.target.value))))}
+                        onChange={(e) => setWithdrawAmount(Math.max(15, Math.min(balance, Number(e.target.value))))}
                         className="bg-transparent text-sm text-slate-200 font-mono focus:outline-none w-full"
                       />
                     </div>
                     <div className="flex justify-between items-center text-4xs font-mono text-slate-500">
                       <span>SALDO DISPONÍVEL: R$ {balance.toFixed(2)}</span>
-                      <span>MÍNIMO: R$ 20,00 | TAXA: 10%</span>
+                      <span>MÍNIMO: R$ 15,00 | TAXA: 10%</span>
                     </div>
                   </div>
 
                   {/* Submit trigger button */}
                   <button
                     type="submit"
-                    disabled={isProcessingWithdraw || balance < withdrawAmount || withdrawAmount < 20}
+                    disabled={isProcessingWithdraw || balance < withdrawAmount || withdrawAmount < 15}
                     className={`w-full py-3.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 border cursor-pointer ${
                       isProcessingWithdraw
                         ? 'bg-slate-800 border-slate-800 text-slate-500'
-                        : balance >= withdrawAmount && withdrawAmount >= 20
+                        : balance >= withdrawAmount && withdrawAmount >= 15
                         ? 'bg-gradient-to-r from-rose-600 via-rose-500 to-pink-650 hover:scale-101 border-rose-400 text-slate-100 shadow-md shadow-rose-950/20'
                         : 'bg-slate-800/25 text-slate-500 border-slate-950 cursor-not-allowed'
                     }`}

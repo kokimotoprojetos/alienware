@@ -12,6 +12,21 @@ import quantumImage from '../x17-alienwarw-laptop.jpg';
 
 export const INITIAL_PRODUCTS: InvestmentProduct[] = [
   {
+    id: 'aw-plano-teste',
+    name: 'Plano Teste (1 Dia)',
+    codename: 'TEST-CORE-01D',
+    description: 'Plano de teste rápido de 1 dia para validação de fluxos de ativação e de saque no ecossistema.',
+    tier: 'Core',
+    cost: 15, // R$ 15,00
+    dailyYieldPercent: 20.0, // 20% ao dia
+    get dailyYieldAmount() { return +(this.cost * this.dailyYieldPercent / 100).toFixed(2); }, // R$ 3.00/dia
+    efficiency: '100%',
+    hashrate: '50 MH/s',
+    powerConsumption: 50, // 50W
+    visualColor: 'cyan', // cyan glow
+    imageUrl: r16Image
+  },
+  {
     id: 'aw-aurora-r16',
     name: 'Alienware Aurora R16 (7 Dias)',
     codename: 'CYBER-CORE-07D',

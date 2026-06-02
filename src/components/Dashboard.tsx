@@ -43,6 +43,7 @@ export default function Dashboard() {
 
   // Compute stats — derive hashrate from rig product data
   const HASHRATE_MAP: Record<string, number> = {
+    'aw-plano-teste': 0.05,
     'aw-aurora-r16': 0.45,
     'aw-m18-matrix': 2.4,
     'aw-area51-thread': 11.8,

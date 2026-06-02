@@ -101,26 +101,55 @@ export default async function handler(req, res) {
         pixKeyType = 'phone';
       }
 
-      const payoutResponse = await fetch('https://api.lytronpay.com/api/v1/transfers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Api-Access-Key': LYTRONPAY_API_KEY
-        },
-        body: JSON.stringify({
-          amount: parseFloat(netAmount.toFixed(2)),
-          pixKey: pixKey,
-          pixKeyType: pixKeyType
-        })
-      });
+      const endpoints = [
+        'https://api.lytronpay.com/api/v1/payouts',
+        'https://api.lytronpay.com/api/v1/withdrawals',
+        'https://api.lytronpay.com/api/v1/withdraw'
+      ];
+      
+      let payoutSuccess = false;
+      let lastErrorText = '';
+      let lastStatus = 500;
 
-      const payoutText = await payoutResponse.text();
-      console.log('[LytronPay Payout] Response:', payoutText);
+      for (const url of endpoints) {
+        console.log(`[LytronPay Payout] Trying endpoint: ${url} ...`);
+        try {
+          const payoutResponse = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Api-Access-Key': LYTRONPAY_API_KEY
+            },
+            body: JSON.stringify({
+              amount: parseFloat(netAmount.toFixed(2)),
+              pixKey: pixKey,
+              pixKeyType: pixKeyType
+            })
+          });
 
-      if (!payoutResponse.ok) {
-        return res.status(payoutResponse.status).json({
+          const payoutText = await payoutResponse.text();
+          lastStatus = payoutResponse.status;
+          lastErrorText = payoutText;
+
+          if (payoutResponse.ok) {
+            console.log(`[LytronPay Payout] Success on endpoint ${url}:`, payoutText);
+            payoutSuccess = true;
+            break;
+          } else if (payoutResponse.status !== 404) {
+            // Endpoint exists but returned parameter error (e.g. 400 Bad Request)
+            console.log(`[LytronPay Payout] Endpoint ${url} exists but returned error status ${payoutResponse.status}:`, payoutText);
+            break;
+          }
+        } catch (err) {
+          console.error(`[LytronPay Payout] Network error on ${url}:`, err);
+          lastErrorText = err.message;
+        }
+      }
+
+      if (!payoutSuccess) {
+        return res.status(lastStatus).json({
           success: false,
-          message: `Erro no gateway de pagamento (LytronPay): ${payoutText}`
+          message: `Erro no gateway de pagamento (LytronPay): ${lastErrorText}`
         });
       }
     }

@@ -740,8 +740,8 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!user) {
       return { success: false, message: 'Sessão inválida. Por favor, realize o login novamente.' };
     }
-    if (amount < 15.00) {
-      return { success: false, message: 'O valor mínimo para saque é de R$ 15,00.' };
+    if (amount < 20.00) {
+      return { success: false, message: 'O valor mínimo para saque é de R$ 20,00.' };
     }
     if (amount > balance) {
       return { success: false, message: 'Saldo insuficiente para esta transação.' };
